@@ -4,33 +4,29 @@
 
 use specs::{World, Entity};
 
-#[derive(Debug, Clone)]
-pub enum FromWorldError {
-    /// Did not find a group when a group was expected
-    NoGroups,
-    /// Found more groups than expected
-    TooManyGroups,
-}
-
 /// Represents a group of [`specs::Component`] fields that can be added or extracted from
 /// a [`specs::World`].
 ///
 /// # Motivation
 ///
-/// The purpose of this trait is to make moving a group of components between
-/// worlds very easy and less error-prone. Instead of accidentally forgetting a component somewhere
-/// in your code, you can group them all together and use the methods in this trait to move them
-/// around.
+/// The purpose of this trait is to make moving a group of components between worlds very easy and
+/// less error-prone. Without grouping all the components to be moved in one place, it is very easy
+/// to forget to update the different parts of your code that deal with creating, fetching, and
+/// updating the entire group.
+///
+/// This example is meant to show what manually implementing this trait can be like. It is quite
+/// cumbersome, so a custom derive is provided to generate the implementation automatically. See
+/// below for more details about using the custom derive.
 ///
 /// ```rust
 /// // Rust 2018 edition
-/// use component_group::{ComponentGroup, FromWorldError};
-/// use specs::{World, Entity, Component, VecStorage, ReadStorage, WriteStorage, Join};
+/// use component_group::ComponentGroup;
+/// use specs::{World, Builder, Entity, Component, VecStorage, ReadStorage, WriteStorage, Join};
 /// use specs::error::Error as SpecsError;
 /// use specs_derive::Component;
 ///
-/// // If you manually implement the trait, you don't need to make the fields Clone.
-/// // This adds a lot of boilerplate. See below for a boilerplate-free method that uses Clone.
+/// // The benefit of implementing the trait manually is that you don't need to make the fields
+/// // Clone like you do with the custom derive.
 /// #[derive(Debug, Component)]
 /// #[storage(VecStorage)]
 /// pub struct Position {x: i32, y: i32}
@@ -49,29 +45,45 @@ pub enum FromWorldError {
 ///     health: Health,
 /// }
 ///
-/// pub struct PlayerComponentsIter<'a> {
-///     // Good luck constructing this type...
-///     inner: specs::join::JoinIter<(&'a specs::storage::Storage<'a, Position, shred::Fetch<'a, specs::storage::MaskedStorage<Position>>>, &'a specs::storage::Storage<'a, Velocity, shred::Fetch<'a, specs::storage::MaskedStorage<Velocity>>>, &'a specs::storage::Storage<'a, Health, shred::Fetch<'a, specs::storage::MaskedStorage<Health>>>)>,
-/// }
-///
 /// impl ComponentGroup for PlayerComponents {
-///     type GroupIter = PlayerComponentsIter<'a>;
 ///     type UpdateError = SpecsError;
 ///
-///     fn all_from_world(world: &World) -> Self::GroupIter {
+///     fn first_from_world(world: &World) -> Option<Self> {
 ///         // Needs to be updated every time the struct changes
-///         let (position, velocity, health) = world.system_data::<(
+///         let (positions, velocities, healths) = world.system_data::<(
 ///             ReadStorage<Position>,
 ///             ReadStorage<Velocity>,
 ///             ReadStorage<Health>,
 ///         )>();
-///         let x: () = (&position, &velocity, &health).join()
-///             .map(|position, velocity, health| Self {position, velocity, health});
+///         (&positions, &velocities, &healths).join().next().map(|(pos, vel, health)| Self {
+///             // No need to clone because we know and can access all the fields
+///             position: Position {x: pos.x, y: pos.y},
+///             velocity: Velocity {x: vel.x, y: vel.y},
+///             health: Health(health.0),
+///         })
+///     }
+///
+///     fn from_world(entity: Entity, world: &World) -> Self {
+///         // Needs to be updated every time the struct changes
+///         let (positions, velocities, healths) = world.system_data::<(
+///             ReadStorage<Position>,
+///             ReadStorage<Velocity>,
+///             ReadStorage<Health>,
+///         )>();
+///         Self {
+///             position: positions.get(entity).map(|pos| Position {x: pos.x, y: pos.y})
+///                 .expect("bug: expected a Position component to be present"),
+///             velocity: velocities.get(entity).map(|vel| Velocity {x: vel.x, y: vel.y})
+///                 .expect("bug: expected a Velocity component to be present"),
+///             health: healths.get(entity).map(|health| Health(health.0))
+///                 .expect("bug: expected a Health component to be present"),
+///         }
 ///     }
 ///
 ///     fn create(self, world: &mut World) -> Entity {
-///         // It's possible to write this code so that the compiler will at least warn you if
-///         // you forget one of the things you need to change when the struct changes.
+///         // It's possible to write this code so that the compiler will at the very least
+///         // warn you if you forget one of the things you need to change when the struct
+///         // changes.
 ///
 ///         // Using pattern matching here forces a compiler error whenever the struct changes
 ///         let Self {position, velocity, health} = self;
@@ -86,15 +98,15 @@ pub enum FromWorldError {
 ///
 ///     fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError> {
 ///         // Needs to be updated every time the struct changes
-///         let (position, velocity, health) = world.system_data::<(
+///         let (mut positions, mut velocities, mut healths) = world.system_data::<(
 ///             WriteStorage<Position>,
 ///             WriteStorage<Velocity>,
 ///             WriteStorage<Health>,
 ///         )>();
 ///
-///         position.insert(entity, self.position)?;
-///         velocity.insert(entity, self.velocity)?;
-///         health.insert(entity, self.health)?;
+///         positions.insert(entity, self.position)?;
+///         velocities.insert(entity, self.velocity)?;
+///         healths.insert(entity, self.health)?;
 ///         Ok(())
 ///     }
 /// }
@@ -104,13 +116,13 @@ pub enum FromWorldError {
 /// #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
 /// # }
 /// #
-/// # #[derive(Debug)] struct AppError {s: String}
-/// # impl From<component_group::FromWorldError> for AppError { fn from(x: component_group::FromWorldError) -> Self { Self {s: format!("{:?}", x) }} }
-/// # impl From<specs::error::Error> for AppError { fn from(x: specs::error::Error) -> Self { Self {s: format!("{:?}", x) }} }
-/// fn main() -> Result<(), AppError> {
+/// fn main() -> Result<(), SpecsError> {
+///     // Start the player on level 1
 ///     let mut level1 = World::new();
+///     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>();
 ///     // Having all the components together in a struct means that Rust will enforce that you
-///     // never forget a field.
+///     // never forget a field. You can still forget to add a component to the group.
+///     // The custom derive below makes it so that adding that is just a one-line change.
 ///     let player = PlayerComponents {
 ///         position: Position {x: 12, y: 59},
 ///         velocity: Velocity {x: -1, y: 2},
@@ -123,18 +135,20 @@ pub enum FromWorldError {
 ///
 ///     // Player needs to move on to the next level
 ///     let mut level2 = World::new();
+///     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>();
+///     // Somehow find the player in the world it was just in
+///     let player_entity = find_player_entity(&level1);
 ///     // Extract the player from the world it was just in
-///     // from_world is a default method on the ComponentGroup trait. You can use all_from_world
-///     // to extract all instances
-///     let player = PlayerComponents::from_world(&level1)?;
+///     let player = PlayerComponents::from_world(player_entity, &level1);
 ///     // Add it to the next world since it hasn't been added yet
-///     player.create(level2);
+///     player.create(&mut level2);
 ///
 ///     // ...
 ///
 ///     // Player needs to go back to previous level
-///     let player = PlayerComponents::from_world(&level2)?;
-///     // Somehow find the player in the world it was just in
+///     // Using first_from_world is safe when you know that there is only one entity with all
+///     // the components in the group
+///     let player = PlayerComponents::first_from_world(&level2).unwrap();
 ///     let player_entity = find_player_entity(&level1);
 ///     // Move the player back
 ///     player.update(player_entity, &mut level1)?;
@@ -151,9 +165,10 @@ pub enum FromWorldError {
 ///
 /// ```rust
 /// // Rust 2018 edition
-/// use component_group::{ComponentGroup, FromWorldError};
+/// use component_group::ComponentGroup;
 /// use component_group_derive::ComponentGroup;
 /// use specs::{World, Component, VecStorage};
+/// use specs::error::Error as SpecsError;
 /// use specs_derive::Component;
 ///
 /// // Note that components need to be Clone to use the automatic derive
@@ -181,13 +196,13 @@ pub enum FromWorldError {
 /// #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
 /// # }
 /// #
-/// # #[derive(Debug)] struct AppError {s: String}
-/// # impl From<component_group::FromWorldError> for AppError { fn from(x: component_group::FromWorldError) -> Self { Self {s: format!("{:?}", x) }} }
-/// # impl From<specs::error::Error> for AppError { fn from(x: specs::error::Error) -> Self { Self {s: format!("{:?}", x) }} }
-/// fn main() -> Result<(), AppError> {
+/// fn main() -> Result<(), SpecsError> {
+///     // Start the player on level 1
 ///     let mut level1 = World::new();
+///     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>();
 ///     // Having all the components together in a struct means that Rust will enforce that you
-///     // never forget a field.
+///     // never forget a field. You can still forget to add a component to the group, but at
+///     // least that is just a one-line change thanks to the custom derive.
 ///     let player = PlayerComponents {
 ///         position: Position {x: 12, y: 59},
 ///         velocity: Velocity {x: -1, y: 2},
@@ -200,18 +215,20 @@ pub enum FromWorldError {
 ///
 ///     // Player needs to move on to the next level
 ///     let mut level2 = World::new();
+///     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>();
+///     // Somehow find the player in the world it was just in
+///     let player_entity = find_player_entity(&level1);
 ///     // Extract the player from the world it was just in
-///     // from_world is a default method on the ComponentGroup trait. You can use all_from_world
-///     // to extract all instances
-///     let player = PlayerComponents::from_world(&level1)?;
+///     let player = PlayerComponents::from_world(player_entity, &level1);
 ///     // Add it to the next world since it hasn't been added yet
 ///     player.create(level2);
 ///
 ///     // ...
 ///
 ///     // Player needs to go back to previous level
-///     let player = PlayerComponents::from_world(&level2)?;
-///     // Somehow find the player in the world it was just in
+///     // Using first_from_world is safe when you know that there is only one entity with all
+///     // the components in the group
+///     let player = PlayerComponents::first_from_world(&level2).unwrap();
 ///     let player_entity = find_player_entity(&level1);
 ///     // Move the player back
 ///     player.update(player_entity, &mut level1)?;
@@ -223,12 +240,14 @@ pub enum FromWorldError {
 /// # Optional Fields
 ///
 /// You can also use `Option` to ignore part of the group if it isn't specified during creation or
-/// if it isn't available in the `World` during extraction.
+/// if it isn't available in the `World` during extraction. If the field is `None`, a call to
+/// `update` will actually remove that component for that entity.
 ///
 /// ```rust
-/// # use component_group::{ComponentGroup, FromWorldError};
+/// # use component_group::ComponentGroup;
 /// # use component_group_derive::ComponentGroup;
 /// # use specs::{World, Component, VecStorage, HashMapStorage};
+/// # use specs::error::Error as SpecsError;
 /// # use specs_derive::Component;
 /// // Same components as before
 /// # #[derive(Debug, Clone, Component)]
@@ -261,11 +280,10 @@ pub enum FromWorldError {
 /// #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
 /// # }
 /// #
-/// # #[derive(Debug)] struct AppError {s: String}
-/// # impl From<component_group::FromWorldError> for AppError { fn from(x: component_group::FromWorldError) -> Self { Self {s: format!("{:?}", x) }} }
-/// # impl From<specs::error::Error> for AppError { fn from(x: specs::error::Error) -> Self { Self {s: format!("{:?}", x) }} }
-/// fn main() -> Result<(), AppError> {
+/// fn main() -> Result<(), SpecsError> {
+///     // Start the player on level 1
 ///     let level1 = World::new();
+///     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>();
 ///     let player = PlayerComponents {
 ///         position: Position {x: 12, y: 59},
 ///         velocity: Velocity {x: -1, y: 2},
@@ -278,9 +296,11 @@ pub enum FromWorldError {
 ///
 ///     // Player needs to move on to the next level
 ///     let mut level2 = World::new();
+///     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>();
 ///     // This code works regardless of whether an animation has been added or not.
 ///     // No need to check either!
-///     let player = PlayerComponents::from_world(&level1)?;
+///     let player_entity = find_player_entity(&level1);
+///     let player = PlayerComponents::from_world(player_entity, &level1);
 ///     player.create(level2);
 ///
 ///     // ...
@@ -288,7 +308,7 @@ pub enum FromWorldError {
 ///     // Player needs to go back to previous level
 ///     // The Animation component may have changed/added/removed, but we don't need to worry
 ///     // about that here!
-///     let player = PlayerComponents::from_world(&level2)?;
+///     let player = PlayerComponents::first_from_world(&level2).unwrap();
 ///     let player_entity = find_player_entity(&level1);
 ///     player.update(player_entity, &mut level1)?;
 ///
@@ -296,15 +316,89 @@ pub enum FromWorldError {
 /// }
 /// ```
 ///
+/// # Fetching Multiple Component Group Instances
+///
+/// In the future, when [Generic Associated Types (GATs)] are implemented, this trait may be
+/// updated as follows:
+///
+/// ```rust,ignore
+/// pub trait ComponentGroup: Sized {
+///     type UpdateError;
+///     type GroupIter<'a>;
+///
+///     // Extracts all instances of this group of components from the world.
+///     fn all_from_world<'a>(world: &'a World) -> Self::GroupIter<'a>;
+///     // ...other methods...
+/// }
+/// ```
+///
+/// It just isn't possible to express this as part of the trait right now. Adding this would be a
+/// breaking change, so that update would not occur without a new major version being released.
+///
+/// As a workaround, you can add the method yourself using the impl Trait feature:
+///
+/// ```rust,no_run
+/// # use component_group::ComponentGroup;
+/// # use component_group_derive::ComponentGroup;
+/// # use specs::{World, Component, VecStorage, ReadStorage, Join};
+/// # use specs::error::Error as SpecsError;
+/// # use specs_derive::Component;
+/// #
+/// # #[derive(Debug, Clone, Component)]
+/// # #[storage(VecStorage)]
+/// # pub struct Position {x: i32, y: i32}
+/// #
+/// # #[derive(Debug, Clone, Component)]
+/// # #[storage(VecStorage)]
+/// # pub struct Velocity {x: i32, y: i32}
+/// #
+/// # #[derive(Debug, Clone, Component)]
+/// # #[storage(VecStorage)]
+/// # pub struct Health(u32);
+/// #
+/// #[derive(ComponentGroup)]
+/// struct PlayerComponents {
+///     position: Position,
+///     velocity: Velocity,
+///     health: Health,
+/// }
+///
+/// impl PlayerComponents {
+///     pub fn all_from_world<'a>(world: &'a World) -> impl Iterator<Item=Self> + 'a {
+///         // ...implement this...
+///         # (0..).map(|_| unimplemented!())
+///     }
+/// }
+///
+/// # use specs::{Entity, Entities};
+/// # fn find_player_entity(world: &World) -> Entity {
+/// #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
+/// # }
+/// #
+/// fn main() {
+///     let mut level1 = World::new();
+///     // ...
+///
+///     for group in PlayerComponents::all_from_world(&level1) {
+///         // ...
+///     }
+/// }
+/// ```
+///
 /// [`specs::Component`]: ../specs/trait.Component.html
 /// [`specs::World`]: ../specs/world/struct.World.html
+/// [Generic Associated Types (GATs)]: https://github.com/rust-lang/rust/issues/44265
 pub trait ComponentGroup: Sized {
-    /// An iterator over instances of this group
-    type GroupIter: Iterator<Item=Self>;
+    /// The error type from the update method
     type UpdateError;
 
-    /// Extracts all instances of this group of components from the world.
-    fn all_from_world(world: &World) -> Self::GroupIter;
+    /// Extracts the first instance of the component group from the world.
+    fn first_from_world(world: &World) -> Option<Self>;
+    /// Extracts this group of components for the given entity from the given world
+    ///
+    /// Panics if one of the component fields could not be populated. This can happen if the
+    /// component does not exist for this entity. Use Option in the field type to avoid this.
+    fn from_world(entity: Entity, world: &World) -> Self;
     /// Create a new entity in the world and add all the components from this group.
     fn create(self, world: &mut World) -> Entity;
     /// Update the components of a given entity with all of the components from this group.
@@ -312,15 +406,4 @@ pub trait ComponentGroup: Sized {
     /// Note: Any additional components that the entity has other than the ones covered by
     /// the fields of this group will be left untouched.
     fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError>;
-
-    /// Extracts one instance of the component group from the world.
-    fn from_world(world: &World) -> Result<Self, FromWorldError> {
-        let mut group_iter = Self::all_from_world(world);
-        let group = group_iter.next().ok_or(FromWorldError::NoGroups)?;
-        match group_iter.next() {
-            Some(_) => return Err(FromWorldError::TooManyGroups),
-            None => {},
-        }
-        Ok(group)
-    }
 }
