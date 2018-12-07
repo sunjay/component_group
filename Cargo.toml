@@ -1,0 +1,18 @@
+[workspace]
+members = [
+  "component_group_derive"
+]
+
+[package]
+name = "component_group"
+version = "0.1.0"
+authors = ["Sunjay Varma <varma.sunjay@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+specs = "0.14"
+
+[dev-dependencies]
+component_group_derive = { path = "component_group_derive" }
+specs-derive = "0.3.0"
+shred = "0.7"
