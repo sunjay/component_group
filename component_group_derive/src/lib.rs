@@ -3,7 +3,6 @@ extern crate proc_macro;
 mod component_field;
 
 use syn::{
-    parse_macro_input,
     DeriveInput,
     Data,
     DataStruct,
@@ -14,9 +13,10 @@ use syn::{
     Generics,
     FieldsNamed,
     Field,
+    parse_macro_input,
     token::{Struct, Enum, Union},
 };
-use proc_macro2::TokenStream;
+use proc_macro2::{TokenStream, Span};
 use quote::quote;
 
 use crate::component_field::ComponentField;
@@ -27,17 +27,27 @@ pub fn derive_component_group(input: proc_macro::TokenStream) -> proc_macro::Tok
     let DeriveInput {ident, generics, data, ..} = parse_macro_input!(input as DeriveInput);
 
     match data {
-        Data::Struct(DataStruct {fields: Fields::Named(FieldsNamed {named: fields, ..}), ..}) => {
-            impl_component_group(ident, &generics, fields.iter()).into()
+        Data::Struct(DataStruct {
+            struct_token: Struct {span},
+            fields: Fields::Named(FieldsNamed {named: fields, ..}),
+            ..
+        }) => {
+            if fields.is_empty() {
+                error(span, "struct must have at least one field to derive ComponentGroup")
+            } else {
+                impl_component_group(ident, &generics, fields.iter())
+            }.into()
         },
         Data::Struct(DataStruct {struct_token: Struct {span}, ..}) |
         Data::Enum(DataEnum {enum_token: Enum {span}, ..}) |
         Data::Union(DataUnion {union_token: Union {span}, ..}) => {
-            syn::Error::new(span, "Only structs with named fields are supported")
-                .to_compile_error()
-                .into()
+            error(span, "Only structs with named fields are supported").into()
         },
     }
+}
+
+fn error(span: Span, message: &str) -> TokenStream {
+    syn::Error::new(span, message).to_compile_error()
 }
 
 /// Generates an impl of the ComponentGroup trait for the given struct
