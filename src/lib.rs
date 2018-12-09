@@ -221,7 +221,7 @@ use specs::{World, Entity};
 ///     // Extract the player from the world it was just in
 ///     let player = PlayerComponents::from_world(player_entity, &level1);
 ///     // Add it to the next world since it hasn't been added yet
-///     player.create(level2);
+///     player.create(&mut level2);
 ///
 ///     // ...
 ///
@@ -301,7 +301,7 @@ use specs::{World, Entity};
 ///     // No need to check either!
 ///     let player_entity = find_player_entity(&level1);
 ///     let player = PlayerComponents::from_world(player_entity, &level1);
-///     player.create(level2);
+///     player.create(&mut level2);
 ///
 ///     // ...
 ///
