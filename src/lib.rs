@@ -243,7 +243,7 @@
 //!
 //! You can also use `Option` to ignore part of the group if it isn't specified during creation or
 //! if it isn't available in the `World` during extraction. If the field is `None`, a call to
-//! `update` will actually remove that component for that entity.
+//! `update` will remove that component for that entity from the component's storage.
 //!
 //! ```rust
 //! # use component_group::ComponentGroup;
