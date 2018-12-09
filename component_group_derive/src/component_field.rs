@@ -9,8 +9,6 @@ use syn::{
     GenericArgument,
     Field,
 };
-use proc_macro2::TokenStream;
-use quote::quote;
 
 /// Returns the inner type of the Option if the given path represents the Option type
 fn inner_option_type(path: &Path) -> Option<&Type> {
@@ -72,70 +70,6 @@ impl<'a> From<&'a Field> for ComponentField<'a> {
             ident: ident.as_ref().unwrap(),
             ty,
             is_optional,
-        }
-    }
-}
-
-impl ComponentField<'_> {
-    /// Returns the code to make this into a type that can be used with the Join trait
-    pub fn joinable(&self) -> TokenStream {
-        let field_name = self.ident;
-        if self.is_optional {
-            quote! {#field_name.maybe()}
-        } else {
-            quote! {&#field_name}
-        }
-    }
-
-    /// Returns the code to clone a fetched value of this field
-    pub fn cloned(&self) -> TokenStream {
-        let field_name = self.ident;
-        if self.is_optional {
-            quote! {#field_name.cloned()}
-        } else {
-            quote! {Clone::clone(#field_name)}
-        }
-    }
-
-    /// Returns the code to read this field from the storage
-    ///
-    /// If the field is not optional, this will also add a call to expect() that ensures that the
-    /// field was actually there
-    pub fn read_value(&self) -> TokenStream {
-        let field_name = self.ident;
-        if self.is_optional {
-            quote! {#field_name.get(entity).cloned()}
-        } else {
-            let ty = self.ty;
-            let err = format!("bug: expected a {} component to be present", quote!(#ty));
-            quote! {#field_name.get(entity).cloned().expect(#err)}
-        }
-    }
-
-    pub fn add_to_builder(&self) -> TokenStream {
-        let field_name = self.ident;
-        if self.is_optional {
-            quote! {
-                if let Some(#field_name) = self.#field_name {
-                    builder = builder.with(#field_name);
-                }
-            }
-        } else {
-            quote! { builder = builder.with(self.#field_name); }
-        }
-    }
-
-    pub fn update_value(&self) -> TokenStream {
-        let field_name = self.ident;
-        if self.is_optional {
-            quote! {
-                match self.#field_name {
-                    Some(value) => #field_name.insert(entity, value)?,
-                    None => #field_name.remove(entity),
-                };
-            }
-        } else {
-            quote! { #field_name.insert(entity, self.#field_name)?; }
         }
     }
 }
