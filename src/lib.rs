@@ -193,8 +193,8 @@
 //!     health: Health,
 //! }
 //!
-//! # use specs::{Entity, Entities, Join};
-//! # fn find_player_entity(world: &World) -> Entity {
+//! # fn find_player_entity(world: &World) -> specs::Entity {
+//! #     use specs::{Entities, Join};
 //! #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
 //! # }
 //! #
@@ -277,8 +277,8 @@
 //!     animation: Option<Animation>
 //! }
 //!
-//! # use specs::{Entity, Entities, Join};
-//! # fn find_player_entity(world: &World) -> Entity {
+//! # fn find_player_entity(world: &World) -> specs::Entity {
+//! #     use specs::{Entities, Join};
 //! #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
 //! # }
 //! #
@@ -349,7 +349,7 @@
 //! ```rust,no_run
 //! # use component_group::ComponentGroup;
 //! # use component_group_derive::ComponentGroup;
-//! # use specs::{World, Component, VecStorage, ReadStorage, Join};
+//! # use specs::{World, Component, VecStorage, ReadStorage};
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
 //! #
@@ -379,11 +379,6 @@
 //!     }
 //! }
 //!
-//! # use specs::{Entity, Entities};
-//! # fn find_player_entity(world: &World) -> Entity {
-//! #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
-//! # }
-//! #
 //! fn main() {
 //!     let mut level1 = World::new();
 //!     // ...do stuff...

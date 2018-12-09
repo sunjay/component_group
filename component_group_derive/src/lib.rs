@@ -90,6 +90,7 @@ fn first_from_world_method(field_names: &[&Ident], fields: &[ComponentField]) ->
     let tys = fields.into_iter().map(|f| f.ty);
     quote! {
         fn first_from_world(world: &specs::World) -> Option<Self> {
+            use specs::Join;
             let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
             ( #(#joinables),* ).join().next().map(|( #(#field_names),* )| Self {
                 #(#field_names : #clones),*
