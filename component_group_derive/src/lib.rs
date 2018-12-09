@@ -47,10 +47,11 @@ fn impl_component_group<'a>(
     fields: impl Iterator<Item=&'a Field>,
 ) -> TokenStream {
     let fields: Vec<_> = fields.map(ComponentField::from).collect();
-    let first_from_world = first_from_world_method(&fields);
-    let from_world = from_world_method(&fields);
+    let field_names: Vec<_> = fields.iter().map(|f| f.ident).collect();
+    let first_from_world = first_from_world_method(&field_names, &fields);
+    let from_world = from_world_method(&field_names, &fields);
     let create = create_method(&fields);
-    let update = update_method(&fields);
+    let update = update_method(&field_names, &fields);
     quote! {
         impl #generics component_group::ComponentGroup for #ident #generics {
             #first_from_world
@@ -61,61 +62,56 @@ fn impl_component_group<'a>(
     }
 }
 
-fn first_from_world_method(fields: &[ComponentField]) -> TokenStream {
-    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
-    let field_names2 = field_names; // Needed to work around limitations of quote
+fn first_from_world_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStream {
+    let joinables = fields.into_iter().map(|f| f.joinable());
+    let clones = fields.into_iter().map(|f| f.cloned());
     let tys = fields.into_iter().map(|f| f.ty);
     quote! {
         fn first_from_world(world: &specs::World) -> Option<Self> {
             let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
-            ( #( & #field_names),* ).join().next().map(|( #(#field_names),* )| Self {
-                #(#field_names : Clone::clone(#field_names2)),*
+            ( #(#joinables),* ).join().next().map(|( #(#field_names),* )| Self {
+                #(#field_names : #clones),*
             })
         }
     }
 }
 
-fn from_world_method(fields: &[ComponentField]) -> TokenStream {
-    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
-    let field_names2 = field_names; // Needed to work around limitations of quote
+fn from_world_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStream {
     let tys = fields.into_iter().map(|f| f.ty);
-    let err_msgs = fields.into_iter()
-        .map(|ComponentField {ty, ..}| format!("bug: expected a {} component to be present", quote!(#ty)));
+    let reads = fields.into_iter().map(|f| f.read_value());
     quote! {
         fn from_world(entity: specs::Entity, world: &specs::World) -> Self {
             let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
 
             Self {
-                #(
-                    #field_names : #field_names2.get(entity).cloned().expect(#err_msgs)
-                ),*
+                #( #field_names : #reads ),*
             }
         }
     }
 }
 
 fn create_method(fields: &[ComponentField]) -> TokenStream {
-    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
+    let builder_adds = fields.into_iter().map(|f| f.add_to_builder());
     quote! {
         fn create(self, world: &mut specs::World) -> specs::Entity {
             use specs::Builder;
-            world.create_entity()
-                #( .with(self.#field_names) )*
-                .build()
+            #[allow(unused_mut)]
+            let mut builder = world.create_entity();
+            #( #builder_adds )*
+            builder.build()
         }
     }
 }
 
-fn update_method(fields: &[ComponentField]) -> TokenStream {
-    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
-    let field_names2 = field_names; // Needed to work around limitations of quote
+fn update_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStream {
     let tys = fields.into_iter().map(|f| f.ty);
+    let updates = fields.into_iter().map(|f| f.update_value());
     quote! {
         type UpdateError = specs::error::Error;
         fn update(self, entity: specs::Entity, world: &mut specs::World) -> Result<(), Self::UpdateError> {
             let ( #(mut #field_names),* ) = world.system_data::<( #( specs::WriteStorage<#tys> ),* )>();
 
-            #( #field_names.insert(entity, self.#field_names2)?; )*
+            #( #updates )*
 
             Ok(())
         }

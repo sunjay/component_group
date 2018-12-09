@@ -282,8 +282,8 @@ use specs::{World, Entity};
 /// #
 /// fn main() -> Result<(), SpecsError> {
 ///     // Start the player on level 1
-///     let level1 = World::new();
-///     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>();
+///     let mut level1 = World::new();
+///     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>(); level1.register::<Animation>();
 ///     let player = PlayerComponents {
 ///         position: Position {x: 12, y: 59},
 ///         velocity: Velocity {x: -1, y: 2},
@@ -296,7 +296,7 @@ use specs::{World, Entity};
 ///
 ///     // Player needs to move on to the next level
 ///     let mut level2 = World::new();
-///     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>();
+///     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>(); level2.register::<Animation>();
 ///     // This code works regardless of whether an animation has been added or not.
 ///     // No need to check either!
 ///     let player_entity = find_player_entity(&level1);
