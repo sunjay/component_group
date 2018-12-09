@@ -316,6 +316,9 @@ use specs::{World, Entity};
 /// }
 /// ```
 ///
+/// Note: The way we match for the Option type is very naive right now. Using
+/// `Option<YourComponent>` will work, but using `std::option::Option<YourComponent>` will not.
+///
 /// # Fetching Multiple Component Group Instances
 ///
 /// In the future, when [Generic Associated Types (GATs)] are implemented, this trait may be

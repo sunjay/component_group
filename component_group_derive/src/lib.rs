@@ -1,5 +1,7 @@
 extern crate proc_macro;
 
+mod component_field;
+
 use syn::{
     parse_macro_input,
     DeriveInput,
@@ -17,14 +19,16 @@ use syn::{
 use proc_macro2::TokenStream;
 use quote::quote;
 
+use crate::component_field::ComponentField;
+
 #[proc_macro_derive(ComponentGroup)]
 pub fn derive_component_group(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // Parse the input tokens into a syntax tree
     let DeriveInput {ident, generics, data, ..} = parse_macro_input!(input as DeriveInput);
 
     match data {
-        Data::Struct(DataStruct {fields: Fields::Named(fields), ..}) => {
-            impl_component_group(ident, &generics, &fields).into()
+        Data::Struct(DataStruct {fields: Fields::Named(FieldsNamed {named: fields, ..}), ..}) => {
+            impl_component_group(ident, &generics, fields.iter()).into()
         },
         Data::Struct(DataStruct {struct_token: Struct {span}, ..}) |
         Data::Enum(DataEnum {enum_token: Enum {span}, ..}) |
@@ -37,7 +41,12 @@ pub fn derive_component_group(input: proc_macro::TokenStream) -> proc_macro::Tok
 }
 
 /// Generates an impl of the ComponentGroup trait for the given struct
-fn impl_component_group(ident: Ident, generics: &Generics, fields: &FieldsNamed) -> TokenStream {
+fn impl_component_group<'a>(
+    ident: Ident,
+    generics: &'a Generics,
+    fields: impl Iterator<Item=&'a Field>,
+) -> TokenStream {
+    let fields: Vec<_> = fields.map(ComponentField::from).collect();
     let first_from_world = first_from_world_method(&fields);
     let from_world = from_world_method(&fields);
     let create = create_method(&fields);
@@ -52,10 +61,10 @@ fn impl_component_group(ident: Ident, generics: &Generics, fields: &FieldsNamed)
     }
 }
 
-fn first_from_world_method(fields: &FieldsNamed) -> TokenStream {
-    let field_names = &fields.named.iter().map(|f| &f.ident).collect::<Vec<_>>();
+fn first_from_world_method(fields: &[ComponentField]) -> TokenStream {
+    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
     let field_names2 = field_names; // Needed to work around limitations of quote
-    let tys = fields.named.iter().map(|f| &f.ty);
+    let tys = fields.into_iter().map(|f| f.ty);
     quote! {
         fn first_from_world(world: &specs::World) -> Option<Self> {
             let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
@@ -66,12 +75,12 @@ fn first_from_world_method(fields: &FieldsNamed) -> TokenStream {
     }
 }
 
-fn from_world_method(fields: &FieldsNamed) -> TokenStream {
-    let field_names = &fields.named.iter().map(|f| &f.ident).collect::<Vec<_>>();
+fn from_world_method(fields: &[ComponentField]) -> TokenStream {
+    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
     let field_names2 = field_names; // Needed to work around limitations of quote
-    let tys = fields.named.iter().map(|f| &f.ty);
-    let err_msgs = fields.named.iter()
-        .map(|Field {ty, ..}| format!("bug: expected a {} component to be present", quote!(#ty)));
+    let tys = fields.into_iter().map(|f| f.ty);
+    let err_msgs = fields.into_iter()
+        .map(|ComponentField {ty, ..}| format!("bug: expected a {} component to be present", quote!(#ty)));
     quote! {
         fn from_world(entity: specs::Entity, world: &specs::World) -> Self {
             let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
@@ -85,8 +94,8 @@ fn from_world_method(fields: &FieldsNamed) -> TokenStream {
     }
 }
 
-fn create_method(fields: &FieldsNamed) -> TokenStream {
-    let field_names = &fields.named.iter().map(|f| &f.ident).collect::<Vec<_>>();
+fn create_method(fields: &[ComponentField]) -> TokenStream {
+    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
     quote! {
         fn create(self, world: &mut specs::World) -> specs::Entity {
             use specs::Builder;
@@ -97,10 +106,10 @@ fn create_method(fields: &FieldsNamed) -> TokenStream {
     }
 }
 
-fn update_method(fields: &FieldsNamed) -> TokenStream {
-    let field_names = &fields.named.iter().map(|f| &f.ident).collect::<Vec<_>>();
+fn update_method(fields: &[ComponentField]) -> TokenStream {
+    let field_names = &fields.into_iter().map(|f| f.ident).collect::<Vec<_>>();
     let field_names2 = field_names; // Needed to work around limitations of quote
-    let tys = fields.named.iter().map(|f| &f.ty);
+    let tys = fields.into_iter().map(|f| f.ty);
     quote! {
         type UpdateError = specs::error::Error;
         fn update(self, entity: specs::Entity, world: &mut specs::World) -> Result<(), Self::UpdateError> {
