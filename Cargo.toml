@@ -15,4 +15,3 @@ specs = "0.14"
 [dev-dependencies]
 component_group_derive = { path = "component_group_derive" }
 specs-derive = "0.3.0"
-shred = "0.7"
