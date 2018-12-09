@@ -56,6 +56,7 @@ fn impl_component_group<'a>(
     generics: &'a Generics,
     fields: impl Iterator<Item=&'a Field>,
 ) -> TokenStream {
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let fields: Vec<_> = fields.map(ComponentField::from).collect();
     let field_names: Vec<_> = fields.iter().map(|f| f.ident).collect();
     let first_from_world = first_from_world_method(&field_names, &fields);
@@ -63,7 +64,7 @@ fn impl_component_group<'a>(
     let create = create_method(&fields);
     let update = update_method(&field_names, &fields);
     quote! {
-        impl #generics component_group::ComponentGroup for #ident #generics {
+        impl #impl_generics component_group::ComponentGroup for #ident #ty_generics #where_clause {
             #first_from_world
             #from_world
             #create

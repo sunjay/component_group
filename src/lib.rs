@@ -389,6 +389,49 @@
 //! }
 //! ```
 //!
+//! # Generic Component Groups
+//!
+//! It is possible to use the `ComponentGroup` trait and custom derive with generic structs. Just
+//! make sure to add `Send + Sync + Component + Clone` trait bounds to the generic type parameters
+//! or you will get a compile error. (The `Send + Sync` part is specific to specs.)
+//!
+//! ```rust,no_run
+//! # use component_group::ComponentGroup;
+//! # use component_group_derive::ComponentGroup;
+//! # use specs::{World, Component, VecStorage, ReadStorage};
+//! # use specs::error::Error as SpecsError;
+//! # use specs_derive::Component;
+//! #
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Position {x: i32, y: i32}
+//!
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Velocity {x: i32, y: i32}
+//!
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(VecStorage)]
+//! pub struct AngularVelocity {deg: f64}
+//!
+//! // Don't forget the trait bounds!
+//! #[derive(ComponentGroup)]
+//! struct PlayerComponents<V: Send + Sync + Component + Clone> {
+//!     position: Position,
+//!     velocity: V,
+//! }
+//!
+//! // Can use this to provide different component groups that share most of their structure
+//! type RunningPlayer = PlayerComponents<Velocity>;
+//! type SpinningPlayer = PlayerComponents<AngularVelocity>;
+//! #
+//! # fn main() {
+//! #     // Need to use the type aliases for them to be checked
+//! #     let runner: RunningPlayer = unimplemented!();
+//! #     let spinner: SpinningPlayer = unimplemented!();
+//! # }
+//! ```
+//!
 //! [`specs::Component`]: ../specs/trait.Component.html
 //! [`specs::World`]: ../specs/world/struct.World.html
 //! [Generic Associated Types (GATs)]: https://github.com/rust-lang/rust/issues/44265
