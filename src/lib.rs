@@ -6,12 +6,23 @@
 //! implement the trait. This can greatly reduce the amount of boilerplate required to use this
 //! trait.
 //!
+//! # Table of Contents
+//!
+//! * [Motivation](#motivation)
+//! * [Manually Implementing `ComponentGroup`](#manually-implementing-componentgroup)
+//! * [Automatically Implementing `ComponentGroup`](#automatically-implementing-componentgroup)
+//! * [Optional Fields](#optional-fields)
+//! * [Fetching Multiple Component Group Instances](#fetching-multiple-component-group-instances)
+//! * [Generic Component Groups](#generic-component-groups)
+//!
 //! # Motivation
 //!
 //! The purpose of this trait is to make moving a group of components between worlds very easy and
 //! less error-prone. Without grouping all the components to be moved in one place, it is very easy
 //! to forget to update the different parts of your code that deal with creating, fetching, and
 //! updating the entire group.
+//!
+//! # Manually Implementing `ComponentGroup`
 //!
 //! This example is meant to show what manually implementing this trait can be like. It is quite
 //! cumbersome, so a custom derive is provided to generate the implementation automatically. See
@@ -159,7 +170,7 @@
 //! }
 //! ```
 //!
-//! # Custom Derive
+//! # Automatically Implementing `ComponentGroup`
 //!
 //! You can also automatically implement the `ComponentGroup` trait using `#[derive(ComponentGroup)]`.
 //! This removes all the boilerplate you saw in the example above and automatically provides the
