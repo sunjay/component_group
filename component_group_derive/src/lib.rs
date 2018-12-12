@@ -1,3 +1,7 @@
+//! The custom derive for the `ComponentGroup` trait is defined in this crate. There is no need to
+//! depend on this crate because its contents are automatically re-exported by the
+//! `component_group` crate. See the documentation of that crate for more information.
+
 extern crate proc_macro;
 
 mod component_field;
