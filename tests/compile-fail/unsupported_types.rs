@@ -1,12 +1,10 @@
 // Tests for using the derive on unsupported types (enums, union, unit structs, empty structs)
 
 extern crate component_group;
-extern crate component_group_derive;
 extern crate specs;
 extern crate specs_derive;
 
 use component_group::ComponentGroup;
-use component_group_derive::ComponentGroup;
 use specs::{World, Component, VecStorage};
 use specs_derive::Component;
 

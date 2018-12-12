@@ -2,8 +2,9 @@
 //! This trait is used to make managing a group of [`specs::Component`] fields easier, even across
 //! multiple [`specs::World`] instances.
 //!
-//! The `component_group_derive` crate (documented below) provides a custom derive that you can use
-//! to automatically implement the trait. This can save you from writing a lot of boilerplate.
+//! This crate also provides a custom derive (documented below) that you can use to automatically
+//! implement the trait. This can greatly reduce the amount of boilerplate required to use this
+//! trait.
 //!
 //! # Motivation
 //!
@@ -160,15 +161,14 @@
 //!
 //! # Custom Derive
 //!
-//! The `component_group_derive` crate makes this even easier by removing all of the boilerplate
-//! involved in implementing this trait. That derive requires that all fields be Clone so that they
-//! can be copied within the methods.
+//! You can also automatically implement the `ComponentGroup` trait using `#[derive(ComponentGroup)]`.
+//! This removes all the boilerplate you saw in the example above and automatically provides the
+//! methods in `ComponentGroup`. All fields in the struct must implement `Clone` so that they can
+//! be copied within the methods that get implemented.
 //!
 //! ```rust
 //! // Rust 2018 edition
 //! use component_group::ComponentGroup;
-//! // Note that you need to add component_group_derive as a dependency to your Cargo.toml file.
-//! use component_group_derive::ComponentGroup;
 //! use specs::{World, Component, VecStorage};
 //! use specs::error::Error as SpecsError;
 //! use specs_derive::Component;
@@ -247,7 +247,6 @@
 //!
 //! ```rust
 //! # use component_group::ComponentGroup;
-//! # use component_group_derive::ComponentGroup;
 //! # use specs::{World, Component, VecStorage, HashMapStorage};
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
@@ -348,7 +347,6 @@
 //!
 //! ```rust,no_run
 //! # use component_group::ComponentGroup;
-//! # use component_group_derive::ComponentGroup;
 //! # use specs::{World, Component, VecStorage, ReadStorage};
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
@@ -397,7 +395,6 @@
 //!
 //! ```rust,no_run
 //! # use component_group::ComponentGroup;
-//! # use component_group_derive::ComponentGroup;
 //! # use specs::{World, Component, VecStorage, ReadStorage};
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
@@ -437,6 +434,8 @@
 //! [Generic Associated Types (GATs)]: https://github.com/rust-lang/rust/issues/44265
 
 #![deny(unused_must_use)]
+
+#[doc(hidden)] pub use component_group_derive::*;
 
 use specs::{World, Entity};
 

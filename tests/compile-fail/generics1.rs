@@ -1,12 +1,10 @@
 // Tests that generic structs work and are properly bounded
 
 extern crate component_group;
-extern crate component_group_derive;
 extern crate specs;
 extern crate specs_derive;
 
 use component_group::ComponentGroup;
-use component_group_derive::ComponentGroup;
 use specs::{Component, VecStorage};
 use specs_derive::Component;
 

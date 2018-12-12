@@ -11,8 +11,8 @@ edition = "2018"
 
 [dependencies]
 specs = "0.14"
+component_group_derive = { path = "component_group_derive", version = "0.1.0" }
 
 [dev-dependencies]
-component_group_derive = { path = "component_group_derive" }
 specs-derive = "0.3"
 compiletest_rs = { version = "0.3", features = ["stable"] }
