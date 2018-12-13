@@ -327,6 +327,7 @@
 //! #[storage(VecStorage)]
 //! pub struct Health(u32);
 //!
+//! // This is all of the code you need to write to define the group and all of its operations!
 //! #[derive(ComponentGroup)]
 //! struct PlayerComponents {
 //!     position: Position,
