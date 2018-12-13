@@ -1,10 +1,11 @@
-//! This crate exposes the [`ComponentGroup`](trait.ComponentGroup.html) trait.
-//! This trait is used to make managing a group of [`specs::Component`] fields easier, even across
+//! This crate exposes the [`ComponentGroup`] trait.
+//! This trait is used to make managing a group of [`specs::Component`] instances easier.
+//! This is especially important when reading, writing, or modifying them all as a group across
 //! multiple [`specs::World`] instances.
 //!
 //! This crate also provides a custom derive (documented below) that you can use to automatically
-//! implement the trait. This can greatly reduce the amount of boilerplate required to use this
-//! trait.
+//! implement the trait. This can greatly reduce the amount of boilerplate and make modifying your
+//! group of components much easier.
 //!
 //! # Table of Contents
 //!
@@ -17,10 +18,139 @@
 //!
 //! # Motivation
 //!
-//! The purpose of this trait is to make moving a group of components between worlds very easy and
-//! less error-prone. Without grouping all the components to be moved in one place, it is very easy
-//! to forget to update the different parts of your code that deal with creating, fetching, and
-//! updating the entire group.
+//! The `ComponentGroup` trait makes operating on many components at once much easier and less
+//! error-prone. Trying to update all of your code every time you add a new component to an entity
+//! is very difficult to manage. By grouping all of the components together in a single struct, you
+//! can better manage all of them and make fewer mistakes when you edit your code. The following is
+//! an example of what your code might look like *without* this trait.
+//!
+//! ```rust
+//! // Rust 2018 edition
+//! use specs::{World, Builder, Entity, Component, VecStorage, ReadStorage, WriteStorage, Join};
+//! use specs::error::Error as SpecsError;
+//! use specs_derive::Component;
+//!
+//! // Let's setup some components to add to our World
+//! #[derive(Debug, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Position {x: i32, y: i32}
+//!
+//! #[derive(Debug, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Velocity {x: i32, y: i32}
+//!
+//! #[derive(Debug, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Health(u32);
+//!
+//! # use specs::Entities;
+//! # fn find_player_entity(world: &World) -> Entity {
+//! #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
+//! # }
+//! #
+//! fn main() -> Result<(), SpecsError> {
+//!     // Start the player on level 1
+//!     let mut level1 = World::new();
+//!     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>();
+//!     // Add the player to the level
+//!     level1.create_entity()
+//!         // This player only has three components right now, but imagine what could happen
+//!         // to this code as that number grows
+//!         .with(Position {x: 12, y: 59})
+//!         .with(Velocity {x: -1, y: 2})
+//!         .with(Health(5))
+//!         .build();
+//!
+//!     // ...
+//!
+//!     // Player needs to move on to the next level
+//!     let mut level2 = World::new();
+//!     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>();
+//!     # { // Need to do this in its own scope (not relevant to the example)
+//!     // Somehow find the player in the world it was just in
+//!     let player_entity = find_player_entity(&level1);
+//!     // Need to fetch all the components of the player. Be careful to keep this in sync with
+//!     // the code above!
+//!     let (positions, velocities, healths) = level1.system_data::<(
+//!         ReadStorage<Position>,
+//!         ReadStorage<Velocity>,
+//!         ReadStorage<Health>,
+//!     )>();
+//!     // If any of these fields were Clone, we could call Option::cloned on the result
+//!     // of `get(entity)` and avoid some of this boilerplate
+//!     let position = positions.get(player_entity).map(|pos| Position {x: pos.x, y: pos.y})
+//!         .expect("bug: expected a Position component to be present");
+//!     let velocity = velocities.get(player_entity).map(|vel| Velocity {x: vel.x, y: vel.y})
+//!         .expect("bug: expected a Velocity component to be present");
+//!     let health = healths.get(player_entity).map(|health| Health(health.0))
+//!         .expect("bug: expected a Health component to be present");
+//!     // Now we can add everything to the new level we created
+//!     level2.create_entity()
+//!         .with(position)
+//!         .with(velocity)
+//!         .with(health)
+//!         .build();
+//!     # } // Need to do this in its own scope (not relevant to the example)
+//!
+//!     // ...
+//!
+//!     // Player needs to go back to previous level
+//!     // Find the player in level **2**
+//!     let player_entity = find_player_entity(&level2);
+//!     // That means that we need to now duplicate everything from the above again!
+//!     // This time we're fetching from level2, not level1
+//!     let (positions, velocities, healths) = level2.system_data::<(
+//!         ReadStorage<Position>,
+//!         ReadStorage<Velocity>,
+//!         ReadStorage<Health>,
+//!     )>();
+//!     let position = positions.get(player_entity).map(|pos| Position {x: pos.x, y: pos.y})
+//!         .expect("bug: expected a Position component to be present");
+//!     let velocity = velocities.get(player_entity).map(|vel| Velocity {x: vel.x, y: vel.y})
+//!         .expect("bug: expected a Velocity component to be present");
+//!     let health = healths.get(player_entity).map(|health| Health(health.0))
+//!         .expect("bug: expected a Health component to be present");
+//!     // Now that we have the components, we need to re-add them. However, we have to first
+//!     // find the player in level **1**
+//!     let player_entity = find_player_entity(&level1);
+//!     // Now we need to fetch write storages for every component, essentially duplicating the
+//!     // code again! Have to make sure we insert into level **1**
+//!     let (mut positions, mut velocities, mut healths) = level1.system_data::<(
+//!         WriteStorage<Position>,
+//!         WriteStorage<Velocity>,
+//!         WriteStorage<Health>,
+//!     )>();
+//!
+//!     positions.insert(player_entity, position)?;
+//!     velocities.insert(player_entity, velocity)?;
+//!     healths.insert(player_entity, health)?;
+//!
+//!     Ok(())
+//! }
+//! ```
+//!
+//! Notice how much there is to keep track of in this code! The slightest typo can result in
+//! completely incorrect behaviour and very hard to track down bugs. Modifying this code is even
+//! worse because you have to search through everywhere you could have added or modified a
+//! component and make sure that area gets updated. These changes can propogate throughout your
+//! entire codebase and make it very difficult to modify as the number of components grows.
+//!
+//! This crate is designed to provide a more sustainable approach to this problem. Rather than
+//! trying to manage ad-hoc groups of components that could change in any part of the code at any
+//! given time, the trait provided by this crate groups all of the components together in a single
+//! struct. The code that needs to be written for the operations on these components is unavoidable
+//! given the API that specs provides, but at least you can make it easier by grouping everything
+//! into a single place.
+//!
+//! We've tried to make it even easier than that too by providing a way to automatically derive the
+//! trait as long as your components implement the `Clone` trait. That means that you can actually
+//! get all of the benefits of this trait by just defining a single struct. Everything else is done
+//! automatically!
+//!
+//! The next section of the documentation shows you how to manually implement the `ComponentGroup`
+//! trait for a given group of components. This is still a lot of boilerplate, but it is all
+//! grouped in one place. The section after that shows how to remove all the boilerplate by
+//! automatically deriving the trait.
 //!
 //! # Manually Implementing `ComponentGroup`
 //!
@@ -440,6 +570,7 @@
 //! # }
 //! ```
 //!
+//! [`ComponentGroup`]: trait.ComponentGroup.html
 //! [`specs::Component`]: https://docs.rs/specs/*/specs/trait.Component.html
 //! [`specs::World`]: https://docs.rs/specs/*/specs/specs/world/struct.World.html
 //! [Generic Associated Types (GATs)]: https://github.com/rust-lang/rust/issues/44265
