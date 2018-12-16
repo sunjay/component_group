@@ -611,4 +611,151 @@ pub trait ComponentGroup: Sized {
     /// Note: Any additional components that the entity has other than the ones covered by
     /// the fields of this group will be left untouched.
     fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError>;
+
+    /// Returns all instances of this component group from the given world
+    fn all_from_world<'a>(world: &'a World) -> <&'a World as IterComponentGroup<Self>>::Iter
+        where &'a World: IterComponentGroup<Self> {
+        world.iter_groups()
+    }
+}
+
+/// A trait for iterating over all instances of a [`ComponentGroup`] in a given [`specs::World`].
+/// **Instead of calling the method from this trait directly, use the [`all_from_world()`] method
+/// on [`ComponentGroup`].** That method is implemented automatically for all component groups that
+/// implement this trait. In the future, this trait may be removed (see below). So calling the
+/// [`all_from_world()`] method is the most future-proof way to get this functionality.
+///
+/// To implement this trait, implement it for your specific [`ComponentGroup`] as the type
+/// parameter `T`.
+///
+/// ```rust,no_run
+/// # use component_group::{ComponentGroup, IterComponentGroup};
+/// # use specs::{World, Component, VecStorage, ReadStorage};
+/// # use specs::error::Error as SpecsError;
+/// # use specs_derive::Component;
+/// #
+/// # #[derive(Debug, Clone, Component)]
+/// # #[storage(VecStorage)]
+/// # pub struct Position {x: i32, y: i32}
+/// #
+/// # #[derive(Debug, Clone, Component)]
+/// # #[storage(VecStorage)]
+/// # pub struct Velocity {x: i32, y: i32}
+/// #
+/// # #[derive(Debug, Clone, Component)]
+/// # #[storage(VecStorage)]
+/// # pub struct Health(u32);
+/// #
+/// #[derive(ComponentGroup)]
+/// struct PlayerComponents {
+///     position: Position,
+///     velocity: Velocity,
+///     health: Health,
+/// }
+///
+/// struct PlayerComponentsIter<'a> {
+///     positions: ReadStorage<'a, Position>,
+///     velocities: ReadStorage<'a, Velocity>,
+///     healths: ReadStorage<'a, Health>,
+/// }
+///
+/// struct PlayerComponentsIterator<'a> {
+///     iter: specs::join::JoinIter<(&'a ReadStorage<'a, Position>, &'a ReadStorage<'a, Velocity>, &'a ReadStorage<'a, Health>)>,
+/// }
+///
+/// impl<'a> Iterator for PlayerComponentsIterator<'a> {
+///     type Item = PlayerComponents;
+///
+///     fn next(&mut self) -> Option<Self::Item> {
+///         self.iter.next().map(|(pos, vel, health)| PlayerComponents {
+///             // No need to clone because we know and can access all the fields
+///             position: Position {x: pos.x, y: pos.y},
+///             velocity: Velocity {x: vel.x, y: vel.y},
+///             health: Health(health.0),
+///         })
+///     }
+/// }
+///
+/// impl<'a> IntoIterator for PlayerComponentsIter<'a> {
+///     type Item = <Self::IntoIter as Iterator>::Item;
+///     type IntoIter = PlayerComponentsIterator<'a>;
+///
+///     fn into_iter(self) -> Self::IntoIter {
+///         use specs::Join;
+///         PlayerComponentsIterator {
+///             iter: (&self.positions, &self.velocities, &self.healths).join(),
+///         }
+///     }
+/// }
+///
+/// impl<'a> IterComponentGroup<PlayerComponents> for &'a World {
+///     type Iter = PlayerComponentsIter<'a>;
+///
+///     fn iter_groups(self) -> Self::Iter {
+///         // Needs to be updated every time the struct changes
+///         let (positions, velocities, healths) = self.system_data::<(
+///             ReadStorage<Position>,
+///             ReadStorage<Velocity>,
+///             ReadStorage<Health>,
+///         )>();
+///         PlayerComponentsIter {positions, velocities, healths}
+///     }
+/// }
+///
+/// fn main() {
+///     let mut level1 = World::new();
+///     // ...do stuff...
+///
+///     for group in PlayerComponents::all_from_world(&level1) {
+///         // ...do stuff with each group...
+///     }
+/// }
+/// ```
+///
+/// The reason that this trait may eventually be removed is because it is only necessary because
+/// a feature called [Generic Associated Types (GATs)] has not been fully implemented or stablized
+/// yet. With that feature, it would be possible to add this functionality directly to the
+/// [`ComponentGroup`] trait:
+///
+/// ```rust,ignore
+/// pub trait ComponentGroup: Sized {
+///     type UpdateError;
+///     type GroupIter<'a>;
+///
+///     fn all_from_world<'a>(world: &'a World) -> Self::GroupIter<'a>;
+///     // ...other methods...
+/// }
+/// ```
+///
+/// To iterate over components in a [`specs::World`], you need to bind that iterator to the
+/// lifetime of the world you are iterating over. The code above shows that with generic associated
+/// types, you could do that within the [`ComponentGroup`] trait itself.
+///
+/// This trait only exists as a workaround for that problem. It works by "flipping" the method so
+/// that the `Self` type is `World` instead of `ComponentGroup`. This allows the implementor of
+/// this trait to specify the right lifetime without actually needing a generic associated type.
+///
+/// **Compatibility Note:** If this trait is removed in the future in favor of a GATs based
+/// approach, a new major version of this crate will be released so that the breaking change does
+/// not affect anyone accidentally. If you use `#[derive(...)]` to implement this trait and
+/// [`ComponentGroup`], upgrading should be very easy. Please also make sure to use the methods on
+/// [`ComponentGroup`] directly instead of the method from this trait to avoid any breakage due to
+/// that.
+///
+/// [`ComponentGroup`]: trait.ComponentGroup.html
+/// [`all_from_world()`]: trait.ComponentGroup.html#method.all_from_world
+/// [`specs::World`]: https://docs.rs/specs/*/specs/world/struct.World.html
+/// [Generic Associated Types (GATs)]: https://github.com/rust-lang/rust/issues/44265
+pub trait IterComponentGroup<T: ComponentGroup> {
+    type Iter: IntoIterator<Item=T>;
+
+    /// Extracts all instances of a group of components T from the world.
+    ///
+    /// **DO NOT USE:** Use the [`all_from_world()`] method on `ComponentGroup` instead. That
+    /// method is automatically implemented for any type that implements this trait for
+    /// [`specs::World`].
+    ///
+    /// [`all_from_world()`]: trait.ComponentGroup.html#method.all_from_world
+    /// [`specs::World`]: https://docs.rs/specs/*/specs/world/struct.World.html
+    fn iter_groups(self) -> Self::Iter;
 }
