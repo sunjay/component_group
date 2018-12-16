@@ -154,9 +154,11 @@
 //!
 //! # Manually Implementing `ComponentGroup`
 //!
-//! This example is meant to show what manually implementing this trait can be like. It is quite
-//! cumbersome, so a custom derive is provided to generate the implementation automatically. See
-//! below for more details about using the custom derive.
+//! This example is meant to show what manually implementing this trait can be like. The basic idea
+//! is to move all of the duplicated code from above into reusable methods on a struct that groups
+//! all of the components that need to be modified together. Implementing it manually like this is
+//! still quite cumbersome, so a way to automatically derive the trait is also provided. See below
+//! for more details about that.
 //!
 //! ```rust
 //! // Rust 2018 edition
@@ -414,7 +416,7 @@
 //!     position: Position,
 //!     velocity: Velocity,
 //!     health: Health,
-//!     // Allowed to not be present
+//!     // This component is allowed to not be present
 //!     animation: Option<Animation>
 //! }
 //!
@@ -431,7 +433,8 @@
 //!         position: Position {x: 12, y: 59},
 //!         velocity: Velocity {x: -1, y: 2},
 //!         health: Health(5),
-//!         // The Animation component will only be added to the created entity if this is not None
+//!         // Since this field is None, the Animation component will not be added when the entity
+//!         // is created
 //!         animation: None, // Not animated to begin with
 //!     };
 //!     player.create(&mut level1);
@@ -441,8 +444,9 @@
 //!     // Player needs to move on to the next level
 //!     let mut level2 = World::new();
 //!     # level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>(); level2.register::<Animation>();
-//!     // If an Animation component was added between the call to create() and this next call, the
-//!     // field will be set to Some(...). Otherwise, it will be None.
+//!     // If an Animation component was added between the call to create() and this next call,
+//!     // the field will be set to Some(animation_component) where animation_component is the
+//!     // instance of the Animation component that was added. Otherwise, the field will be None.
 //!     let player_entity = find_player_entity(&level1);
 //!     let player = PlayerComponents::from_world(player_entity, &level1);
 //!     player.create(&mut level2);
@@ -533,7 +537,7 @@
 //!
 //! It is possible to use the `ComponentGroup` trait and custom derive with generic structs. Just
 //! make sure to add `Send + Sync + Component + Clone` trait bounds to the generic type parameters
-//! or you will get a compile error. (The `Send + Sync` part is specific to specs.)
+//! or you will get a compile error. (The `Send + Sync` part is required by the `specs` crate.)
 //!
 //! ```rust,no_run
 //! # use component_group::ComponentGroup;
