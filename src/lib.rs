@@ -635,13 +635,16 @@ pub trait ComponentGroup: Sized {
     type UpdateError;
 
     /// Extracts the first instance of the component group from the world.
+    ///
+    /// This method is convenient if you know that there is exactly one instance of a this group in
+    /// the world.
     fn first_from_world(world: &World) -> Option<Self>;
     /// Extracts this group of components for the given entity from the given world
     ///
     /// Panics if one of the component fields could not be populated. This can happen if the
     /// component does not exist for this entity. Use Option in the field type to avoid this.
     fn from_world(entity: Entity, world: &World) -> Self;
-    /// Create a new entity in the world and add all the components from this group.
+    /// Create a new entity in the world and add all the components from this group to that entity.
     fn create(self, world: &mut World) -> Entity;
     /// Update the components of a given entity with all of the components from this group.
     ///
