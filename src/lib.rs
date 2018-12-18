@@ -55,7 +55,7 @@
 //!
 //! # Motivation
 //!
-//! The `ComponentGroup` trait makes operating on many components at once much easier and less
+//! The [`ComponentGroup`] trait makes operating on many components at once much easier and less
 //! error-prone. Trying to update all of your code every time you add a new component to an entity
 //! is very difficult to manage. By grouping all of the components together in a single struct, you
 //! can better manage all of them and make fewer mistakes when you edit your code. The following is
@@ -184,7 +184,7 @@
 //! get all of the benefits of this trait by just defining a single struct. Everything else is done
 //! automatically!
 //!
-//! The next section of the documentation shows you how to manually implement the `ComponentGroup`
+//! The next section of the documentation shows you how to manually implement the [`ComponentGroup`]
 //! trait for a given group of components. This is still a lot of boilerplate, but it is all
 //! grouped in one place. The section after that shows how to remove all the boilerplate by
 //! automatically deriving the trait.
@@ -341,9 +341,9 @@
 //!
 //! # Automatically Implementing `ComponentGroup`
 //!
-//! You can also automatically implement the `ComponentGroup` trait using `#[derive(ComponentGroup)]`.
+//! You can also automatically implement the [`ComponentGroup`] trait using `#[derive(ComponentGroup)]`.
 //! This removes all the boilerplate you saw in the example above and automatically provides the
-//! methods in `ComponentGroup`. All fields in the struct must implement `Clone` so that they can
+//! methods in [`ComponentGroup`]. All fields in the struct must implement `Clone` so that they can
 //! be copied within the methods that get implemented.
 //!
 //! ```rust
@@ -572,7 +572,7 @@
 //!
 //! # Generic Component Groups
 //!
-//! It is possible to use the `ComponentGroup` trait and custom derive with generic structs. Just
+//! It is possible to use the [`ComponentGroup`] trait and custom derive with generic structs. Just
 //! make sure to add `Send + Sync + Component + Clone` trait bounds to the generic type parameters
 //! or you will get a compile error. (The `Send + Sync` part is required by the `specs` crate.)
 //!
