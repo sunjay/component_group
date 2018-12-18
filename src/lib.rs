@@ -634,19 +634,28 @@ pub trait ComponentGroup: Sized {
     /// The error type from the [`update` method](#tymethod.update)
     type UpdateError;
 
-    /// Extracts the first instance of the component group from the world.
+    /// Extracts the first instance of this component group from the world.
     ///
     /// This method is convenient if you know that there is exactly one instance of a this group in
     /// the world.
-    fn first_from_world(world: &World) -> Option<Self>;
-    /// Extracts this group of components for the given entity from the given world
     ///
     /// Panics if one of the component fields could not be populated. This can happen if the
-    /// component does not exist for this entity. Use Option in the field type to avoid this.
+    /// component does not exist for this entity. If the field is an `Option` type, its value will
+    /// be set to `None` instead of panicking.
+    fn first_from_world(world: &World) -> Option<Self>;
+    /// Extracts this group of components for the given entity from the given world.
+    ///
+    /// Panics if one of the component fields could not be populated. This can happen if the
+    /// component does not exist for this entity. If the field is an `Option` type, its value will
+    /// be set to `None` instead of panicking.
     fn from_world(entity: Entity, world: &World) -> Self;
-    /// Create a new entity in the world and add all the components from this group to that entity.
+    /// Creates a new entity in the world and adds all the components from this group to that entity.
+    ///
+    /// Any fields with a value of `None` will not be added to the created entity.
     fn create(self, world: &mut World) -> Entity;
     /// Update the components of a given entity with all of the components from this group.
+    ///
+    /// Any fields with a value of `None` will be explicitly removed from the given entity.
     ///
     /// Note: Any additional components that the entity has other than the ones covered by
     /// the fields of this group will be left untouched.
