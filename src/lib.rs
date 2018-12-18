@@ -7,6 +7,43 @@
 //! implement the trait. This can greatly reduce the amount of boilerplate and make modifying your
 //! group of components much easier.
 //!
+//! ```rust,no_run
+//! // Don't forget to add the component_group crate to your Cargo.toml file!
+//! use component_group::ComponentGroup;
+//! # use specs::{World, Component, VecStorage, HashMapStorage};
+//! # use specs::error::Error as SpecsError;
+//! # use specs_derive::Component;
+//!
+//! // These components are just for demonstration purposes. You should swap them out for your own
+//! // Note that components need to be Clone to use the automatic derive of ComponentGroup
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Position {x: i32, y: i32}
+//!
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Velocity {x: i32, y: i32}
+//!
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(VecStorage)]
+//! pub struct Health(u32);
+//!
+//! // This is all of the code you need to write to define the group and all of its operations!
+//! #[derive(ComponentGroup)]
+//! struct PlayerComponents {
+//!     position: Position,
+//!     velocity: Velocity,
+//!     health: Health,
+//! }
+//!
+//! // Now, you can add all of these components to an entity, load them all from the world with
+//! // one line of code, or even update them all at once!
+//! ```
+//!
+//! See the documentation for [`ComponentGroup`] for the exact operations you can perform on the
+//! `PlayerComponents` struct. The rest of the documentation below goes into the motivation behind
+//! this crate and details about how to use it.
+//!
 //! # Table of Contents
 //!
 //! * [Motivation](#motivation)
