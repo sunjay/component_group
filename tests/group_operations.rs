@@ -8,7 +8,7 @@ use specs_derive::Component;
 #[storage(VecStorage)]
 pub struct Position {x: i32, y: i32}
 
-#[derive(Debug, Clone, Component, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Component, PartialEq, Eq)]
 #[storage(VecStorage)]
 pub struct Health(u32);
 
@@ -16,7 +16,7 @@ pub struct Health(u32);
 #[storage(HashMapStorage)]
 pub struct Animation {frame: usize}
 
-#[derive(Debug, Clone, Default, Component, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, Component, PartialEq, Eq)]
 #[storage(NullStorage)]
 pub struct NotInGroup;
 
@@ -54,30 +54,104 @@ fn remove<C: Component + Clone>(world: &mut World, entity: Entity) {
 
 #[test]
 fn create_with_optional_component() {
-    // required - added
-    // optional, None - not added
-    // optional, Some() - added
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        // required components - both must be added
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        // not added since None
+        animation: None,
+    };
+    let entity = player.create(&mut world);
+
+    assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world, entity), Some(Health(5)));
+    assert_eq!(get(&world, entity), None::<Animation>);
+
+    // only components in the group are added
+    assert_eq!(get(&world, entity), None::<NotInGroup>);
+
+    let player = PlayerComponents {
+        // required components - both must be added
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        // added since Some(...)
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+
+    assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world, entity), Some(Health(5)));
+    assert_eq!(get(&world, entity), Some(Animation {frame: 2}));
+
+    // normal insertion still works
+    assert_eq!(get(&world, entity), None::<NotInGroup>);
+    insert(&mut world, entity, NotInGroup);
+    assert_eq!(get(&world, entity), Some(NotInGroup));
 }
 
 #[test]
 fn load_change_after_modifying() {
-    // create
-    // get -> should have old value
-    // from_world -> should have old_value
-    // insert(new_value)
-    // get -> should have new value
-    // from_world -> should have new_value
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: None,
+    };
+    let entity = player.create(&mut world);
+
+    // should be able to observe created components with from_world and first_from_world
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+    assert_eq!(loaded_player.position, Position {x: 12, y: 59});
+    assert_eq!(loaded_player.health, Health(5));
+    assert_eq!(loaded_player.animation, None);
+
+    let (entity2, loaded_player) = PlayerComponents::first_from_world(&world)
+        .expect("expected at least one group");
+    assert_eq!(entity, entity2);
+    assert_eq!(loaded_player.position, Position {x: 12, y: 59});
+    assert_eq!(loaded_player.health, Health(5));
+    assert_eq!(loaded_player.animation, None);
+
+    // should be able to insert a new value and observe the change
+    let new_value = Health(12);
+    assert_ne!(loaded_player.health, new_value);
+    insert(&mut world, entity, new_value);
+
+    // should be the changed value with everything else untouched
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+    assert_eq!(loaded_player.position, Position {x: 12, y: 59});
+    assert_eq!(loaded_player.health, new_value);
+    assert_eq!(loaded_player.animation, None);
+
+    let (_, loaded_player) = PlayerComponents::first_from_world(&world)
+        .expect("expected at least one group");
+    assert_eq!(loaded_player.position, Position {x: 12, y: 59});
+    assert_eq!(loaded_player.health, new_value);
+    assert_eq!(loaded_player.animation, None);
 }
 
 #[test]
 fn load_first_without_required_component() {
-    // first_from_world - returns None before group is ever inserted
+    let mut world = new_world();
 
-    // first_from_world - load group that is only partially in the world
-    // should return None
-    unimplemented!()
+    // should return None when there is nothing in the world just yet
+    assert!(PlayerComponents::first_from_world(&world).is_none());
+
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: None,
+    };
+    let entity = player.create(&mut world);
+
+    // Starts by returning Some(...) since we added a complete instance of the group
+    assert!(PlayerComponents::first_from_world(&world).is_some());
+    remove::<Health>(&mut world, entity);
+    // If a required component is removed, returns None
+    assert!(PlayerComponents::first_from_world(&world).is_none());
+    // This is despite the fact that other components in the group are still there
+    assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
 }
 
 #[test]
