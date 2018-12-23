@@ -112,7 +112,7 @@ fn from_world_method(field_names: &[&Ident], fields: &[ComponentField]) -> Token
         if is_optional {
             quote! {#field_name.get(entity).cloned()}
         } else {
-            let err = format!("bug: expected a {} component to be present", quote!(#ty));
+            let err = format!("expected a {} component to be present", quote!(#ty));
             quote! {#field_name.get(entity).cloned().expect(#err)}
         }
     });
@@ -182,7 +182,7 @@ fn remove_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStre
         if is_optional {
             quote! {#field_name.remove(entity)}
         } else {
-            let err = format!("bug: expected a {} component to be present", quote!(#ty));
+            let err = format!("expected a {} component to be present", quote!(#ty));
             quote! {#field_name.remove(entity).expect(#err)}
         }
     });

@@ -116,11 +116,11 @@
 //!     // If any of these fields were Clone, we could call Option::cloned on the result
 //!     // of `get(entity)` and avoid some of this boilerplate
 //!     let position = positions.get(player_entity).map(|pos| Position {x: pos.x, y: pos.y})
-//!         .expect("bug: expected a Position component to be present");
+//!         .expect("expected a Position component to be present");
 //!     let velocity = velocities.get(player_entity).map(|vel| Velocity {x: vel.x, y: vel.y})
-//!         .expect("bug: expected a Velocity component to be present");
+//!         .expect("expected a Velocity component to be present");
 //!     let health = healths.get(player_entity).map(|health| Health(health.0))
-//!         .expect("bug: expected a Health component to be present");
+//!         .expect("expected a Health component to be present");
 //!     // Now we can add everything to the new level we created
 //!     level2.create_entity()
 //!         .with(position)
@@ -142,11 +142,11 @@
 //!         ReadStorage<Health>,
 //!     )>();
 //!     let position = positions.get(player_entity).map(|pos| Position {x: pos.x, y: pos.y})
-//!         .expect("bug: expected a Position component to be present");
+//!         .expect("expected a Position component to be present");
 //!     let velocity = velocities.get(player_entity).map(|vel| Velocity {x: vel.x, y: vel.y})
-//!         .expect("bug: expected a Velocity component to be present");
+//!         .expect("expected a Velocity component to be present");
 //!     let health = healths.get(player_entity).map(|health| Health(health.0))
-//!         .expect("bug: expected a Health component to be present");
+//!         .expect("expected a Health component to be present");
 //!     // Now that we have the components, we need to re-add them. However, we have to first
 //!     // find the player in level **1**
 //!     let player_entity = find_player_entity(&level1);
@@ -256,11 +256,11 @@
 //!             // If any of these fields were Clone, we could call Option::cloned on the result
 //!             // of `get(entity)` and avoid some of this boilerplate
 //!             position: positions.get(entity).map(|pos| Position {x: pos.x, y: pos.y})
-//!                 .expect("bug: expected a Position component to be present"),
+//!                 .expect("expected a Position component to be present"),
 //!             velocity: velocities.get(entity).map(|vel| Velocity {x: vel.x, y: vel.y})
-//!                 .expect("bug: expected a Velocity component to be present"),
+//!                 .expect("expected a Velocity component to be present"),
 //!             health: healths.get(entity).map(|health| Health(health.0))
-//!                 .expect("bug: expected a Health component to be present"),
+//!                 .expect("expected a Health component to be present"),
 //!         }
 //!     }
 //!
@@ -305,11 +305,11 @@
 //!             // If any of these fields were Clone, we could call Option::cloned on the result
 //!             // of `get(entity)` and avoid some of this boilerplate
 //!             position: positions.remove(entity).map(|pos| Position {x: pos.x, y: pos.y})
-//!                 .expect("bug: expected a Position component to be present"),
+//!                 .expect("expected a Position component to be present"),
 //!             velocity: velocities.remove(entity).map(|vel| Velocity {x: vel.x, y: vel.y})
-//!                 .expect("bug: expected a Velocity component to be present"),
+//!                 .expect("expected a Velocity component to be present"),
 //!             health: healths.remove(entity).map(|health| Health(health.0))
-//!                 .expect("bug: expected a Health component to be present"),
+//!                 .expect("expected a Health component to be present"),
 //!         }
 //!     }
 //! }
