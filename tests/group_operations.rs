@@ -20,7 +20,7 @@ pub struct Animation {frame: usize}
 #[storage(NullStorage)]
 pub struct NotInGroup;
 
-#[derive(ComponentGroup, Debug, PartialEq, Eq)]
+#[derive(ComponentGroup, Debug, Clone, PartialEq, Eq)]
 struct PlayerComponents {
     position: Position,
     health: Health,
@@ -365,14 +365,30 @@ fn update_optional_field() -> Result<(), SpecsError> {
 }
 
 #[test]
-fn update_should_overwrite() {
-    // create
-    // loaded = first_from_world()
-    // insert() - modifies a component
-    // first_from_world - has the modified values
-    // update(loaded)
-    // first_from_world - has the values of loaded, not the modified values
-    unimplemented!()
+fn update_should_overwrite() -> Result<(), SpecsError> {
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+
+    // This value should get overwritten by update
+    let overwritten_value = Health(100);
+    assert_ne!(get(&world, entity), Some(overwritten_value));
+    insert(&mut world, entity, overwritten_value);
+    // Make sure the value to be overwritten was in fact present at some point
+    assert_eq!(get(&world, entity), Some(overwritten_value));
+
+    // Update to the original values
+    loaded_player.update(entity, &mut world)?;
+
+    // Overwritten value should be changed
+    assert_ne!(get(&world, entity), Some(overwritten_value));
+
+    Ok(())
 }
 
 #[test]
