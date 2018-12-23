@@ -12,7 +12,6 @@
 //! // Don't forget to add the component_group crate to your Cargo.toml file!
 //! use component_group::ComponentGroup;
 //! # use specs::{World, Component, VecStorage, HashMapStorage};
-//! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
 //!
 //! // These components are just for demonstration purposes. You should swap them

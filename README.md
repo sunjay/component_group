@@ -27,7 +27,6 @@ creating this trait and how to use it.
 use component_group::ComponentGroup;
 
 use specs::{World, Component, VecStorage, HashMapStorage};
-use specs::error::Error as SpecsError;
 use specs_derive::Component;
 
 // These components are just for demonstration purposes. You should swap them
