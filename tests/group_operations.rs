@@ -277,17 +277,91 @@ fn load_multiple() {
 }
 
 #[test]
-fn update_with_non_group_component() {
+fn update_with_non_group_component() -> Result<(), SpecsError> {
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+
+    // Add a component that is not part of the group
+    insert(&mut world, entity, NotInGroup);
+    assert_eq!(get(&world, entity), Some(NotInGroup));
+
+    // Update all values
+    let player = PlayerComponents {
+        position: Position {x: 32, y: -30},
+        health: Health(8),
+        animation: Some(Animation {frame: 4}),
+    };
+    player.update(entity, &mut world)?;
+
+    // All values part of the group should be changed
+    let updated_player = PlayerComponents::from_world(entity, &world);
+    assert_ne!(loaded_player, updated_player);
+
     // update should not update components that aren't in the group
-    unimplemented!()
+    assert_eq!(get(&world, entity), Some(NotInGroup));
+
+    Ok(())
 }
 
 #[test]
-fn update_optional_field() {
-    // Updating to None - component is removed
-    // Updating to Some - component is inserted
-    // Updating to Some (again) - component is updated to new value
-    unimplemented!()
+fn update_optional_field() -> Result<(), SpecsError> {
+    let mut world = new_world();
+    let frame = 2;
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame}),
+    };
+    let entity = player.create(&mut world);
+
+    // Make sure that optional component currently exists
+    assert_eq!(get(&world, entity), Some(Animation {frame}));
+
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        // None - update should now explicitly remove the component
+        animation: None,
+    };
+    player.update(entity, &mut world)?;
+
+    // Optional component is now gone
+    assert_eq!(get(&world, entity), None::<Animation>);
+
+    let frame2 = 33;
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        // Some - update should now explicitly insert the component
+        animation: Some(Animation {frame: frame2}),
+    };
+    player.update(entity, &mut world)?;
+
+    // Optional component has been re-inserted
+    assert_ne!(get(&world, entity), Some(Animation {frame}));
+    assert_eq!(get(&world, entity), Some(Animation {frame: frame2}));
+
+    let frame3 = 128;
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        // Some - update should now explicitly change the component value
+        animation: Some(Animation {frame: frame3}),
+    };
+    player.update(entity, &mut world)?;
+
+    // Optional component has been changed
+    assert_ne!(get(&world, entity), Some(Animation {frame}));
+    assert_ne!(get(&world, entity), Some(Animation {frame: frame2}));
+    assert_eq!(get(&world, entity), Some(Animation {frame: frame3}));
+
+    Ok(())
 }
 
 #[test]
@@ -320,7 +394,7 @@ fn moved_components_modify_independently() {
 }
 
 #[test]
-fn remove_does_not_remove_non_group_components() {
+fn remove_with_non_group_components() {
     // non-group component still exists
     unimplemented!()
 }
