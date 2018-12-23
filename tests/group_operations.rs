@@ -20,7 +20,7 @@ pub struct Animation {frame: usize}
 #[storage(NullStorage)]
 pub struct NotInGroup;
 
-#[derive(ComponentGroup)]
+#[derive(ComponentGroup, Debug, PartialEq, Eq)]
 struct PlayerComponents {
     position: Position,
     health: Health,
@@ -147,50 +147,133 @@ fn load_first_without_required_component() {
 
     // Starts by returning Some(...) since we added a complete instance of the group
     assert!(PlayerComponents::first_from_world(&world).is_some());
-    remove::<Health>(&mut world, entity);
+
     // If a required component is removed, returns None
+    remove::<Health>(&mut world, entity);
     assert!(PlayerComponents::first_from_world(&world).is_none());
+
     // This is despite the fact that other components in the group are still there
     assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
 }
 
 #[test]
 fn load_first_without_optional_component() {
-    // first_from_world - returns None before group is ever inserted
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
 
-    // first_from_world - load group that is only partially in the world
-    // should return Some, but have None for that component
-    unimplemented!()
+    // Starts by returning Some(...) since we added a complete instance of the group
+    let (entity2, loaded_player) = PlayerComponents::first_from_world(&world)
+        .expect("expected at least one group");
+    assert_eq!(entity, entity2);
+
+    // Removing the optional component
+    assert_eq!(loaded_player.animation, Some(Animation {frame: 2}));
+    remove::<Animation>(&mut world, entity);
+
+    // should still succeed with Some(...), but that field should now be None
+    let (entity2, loaded_player) = PlayerComponents::first_from_world(&world)
+        .expect("expected at least one group");
+    assert_eq!(entity, entity2);
+    assert_eq!(loaded_player.animation, None);
 }
 
 #[test]
-#[should_panic(expected = "")]
+#[should_panic(expected = "expected a Health component to be present")]
 fn load_without_required_component() {
-    // create
-    // from_world - succeeds and has the value for that field
-    // remove(required component)
-    // from_world - panics if a required component can't be loaded
-    unimplemented!()
+    let mut world = new_world();
+
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: None,
+    };
+    let entity = player.create(&mut world);
+
+    // Starts by returning successfully since we added a complete instance of the group
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+    assert_eq!(loaded_player.position, Position {x: 12, y: 59});
+    assert_eq!(loaded_player.health, Health(5));
+    assert_eq!(loaded_player.animation, None);
+
+    // If a required component is removed, panics!
+    remove::<Health>(&mut world, entity);
+    PlayerComponents::from_world(entity, &world);
 }
 
 #[test]
 fn load_without_optional_component() {
-    // create
-    // from_world - succeeds and has the value for that field
-    // remove(optional component)
-    // from_world - does not panic and just returns None for that field
-    // insert(optional component)
-    // from_world - succeeds and has the value for that field
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+
+    // Starts by returning successfully since we added a complete instance of the group
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+
+    // Make sure that optional component currently exists
+    assert_eq!(loaded_player.animation, Some(Animation {frame: 2}));
+    // Removing the optional component
+    remove::<Animation>(&mut world, entity);
+
+    // should still succeed, but that field should now be None
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+    assert_eq!(loaded_player.animation, None);
+
+    // Re-inserting the optional component with a different value
+    let new_value = Animation {frame: 44};
+    insert(&mut world, entity, new_value);
+
+    // should still succeed, but that field should now be Some(...)
+    let loaded_player = PlayerComponents::from_world(entity, &world);
+    assert_eq!(loaded_player.animation, Some(new_value));
 }
 
 #[test]
 fn load_multiple() {
-    // create x2
-    // from_world x2
-    // values should be different (i.e. same entity is not always loaded)
-    // first_from_world should always be the first created
-    unimplemented!()
+    let mut world = new_world();
+
+    // can create multiple entities with different values
+    let player1 = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let player2 = PlayerComponents {
+        position: Position {x: -10, y: 78},
+        health: Health(230),
+        animation: None,
+    };
+    // two different groups
+    assert_ne!(player1, player2);
+
+    let entity1 = player1.create(&mut world);
+    let entity2 = player2.create(&mut world);
+    // two different entities
+    assert_ne!(entity1, entity2);
+
+    // from_world should not return the same components for distinct entities
+    // since both the entities and their components are different
+    let loaded_player1 = PlayerComponents::from_world(entity1, &world);
+    let loaded_player2 = PlayerComponents::from_world(entity2, &world);
+    assert_ne!(loaded_player1, loaded_player2);
+
+    // first_from_world should always return the same value
+    // The order isn't guaranteed, so with multiple instances we can't know which will be returned,
+    // but it should always be deterministic.
+    let (first1, first1_player) = PlayerComponents::first_from_world(&world)
+        .expect("expected at least one group");
+    let (first2, first2_player) = PlayerComponents::first_from_world(&world)
+        .expect("expected at least one group");
+    assert_eq!(first1, first2);
+    assert_eq!(first1_player, first2_player);
 }
 
 #[test]
