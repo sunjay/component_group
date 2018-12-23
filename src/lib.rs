@@ -685,15 +685,12 @@ pub trait ComponentGroup: Sized {
     fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError>;
 
     /// Removes all the components from this group from their storages in the given world for the
-    /// given entity.
-    ///
-    /// Returns the values of each field that were previously present.
+    /// given entity. Returns the values of the removed components.
     ///
     /// Note: Any additional components that the entity has other than the ones covered by
     /// the fields of this group will be left untouched.
     ///
-    /// Panics if one of the component fields could not be populated. This can happen if the
-    /// component does not exist for this entity. If the field is an `Option` type, its value will
-    /// be set to `None` instead of panicking.
+    /// Panics if one of the required component fields was not present for removal. If the field is
+    /// an `Option` type, its value will be set to `None` instead of panicking.
     fn remove(entity: Entity, world: &mut World) -> Self;
 }
