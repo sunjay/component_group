@@ -461,19 +461,72 @@ fn moved_components_modify_independently() {
 
 #[test]
 fn remove_with_non_group_components() {
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+
+    assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world, entity), Some(Health(5)));
+    assert_eq!(get(&world, entity), Some(Animation {frame: 2}));
+
+    // Add a component that is not part of the group
+    assert_eq!(get(&world, entity), None::<NotInGroup>);
+    insert(&mut world, entity, NotInGroup);
+    assert_eq!(get(&world, entity), Some(NotInGroup));
+
+    // Remove the group from the world
+    let removed_player = PlayerComponents::remove(entity, &mut world);
+    assert_eq!(removed_player.position, Position {x: 12, y: 59});
+    assert_eq!(removed_player.health, Health(5));
+    assert_eq!(removed_player.animation, Some(Animation {frame: 2}));
+
+    // all group components are removed
+    assert_eq!(get(&world, entity), None::<Position>);
+    assert_eq!(get(&world, entity), None::<Health>);
+    assert_eq!(get(&world, entity), None::<Animation>);
+
     // non-group component still exists
-    unimplemented!()
+    assert_eq!(get(&world, entity), Some(NotInGroup));
 }
 
 #[test]
-#[should_panic(expected = "")]
+#[should_panic(expected = "expected a Health component to be present")]
 fn remove_required_component_not_present() {
-    // panics if a required component could not be removed
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+
+    // If a required component is not present for removal, panics!
+    remove::<Health>(&mut world, entity);
+    PlayerComponents::remove(entity, &mut world);
 }
 
 #[test]
 fn remove_optional_component_not_present() {
-    // sets the field to None if it was optional and not present in the world during remove
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: Some(Animation {frame: 2}),
+    };
+    let entity = player.create(&mut world);
+
+    // Make sure that optional component currently exists
+    assert_eq!(get(&world, entity), Some(Animation {frame: 2}));
+    // Removing the optional component
+    remove::<Animation>(&mut world, entity);
+
+    // Remove succeeds without panicking, but sets that field to None
+    let removed_player = PlayerComponents::remove(entity, &mut world);
+    assert_eq!(removed_player.position, Position {x: 12, y: 59});
+    assert_eq!(removed_player.health, Health(5));
+    assert_eq!(removed_player.animation, None);
 }
