@@ -636,7 +636,7 @@
 //!
 //! [`ComponentGroup`]: trait.ComponentGroup.html
 //! [`specs::Component`]: https://docs.rs/specs/*/specs/trait.Component.html
-//! [`specs::World`]: https://docs.rs/specs/*/specs/specs/world/struct.World.html
+//! [`specs::World`]: https://docs.rs/specs/*/specs/world/struct.World.html
 //! [Generic Associated Types (GATs)]: https://github.com/rust-lang/rust/issues/44265
 
 #![deny(unused_must_use)]

@@ -58,5 +58,5 @@ struct PlayerComponents {
 ```
 
 [`specs::Component`]: https://docs.rs/specs/*/specs/trait.Component.html
-[`specs::World`]: https://docs.rs/specs/*/specs/specs/world/struct.World.html
+[`specs::World`]: https://docs.rs/specs/*/specs/world/struct.World.html
 [docs]: https://docs.rs/component_group
