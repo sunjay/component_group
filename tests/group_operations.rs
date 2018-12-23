@@ -393,20 +393,70 @@ fn update_should_overwrite() -> Result<(), SpecsError> {
 
 #[test]
 fn move_non_group_should_not_be_moved() {
-    // create in world 1
-    // insert(non group)
-    // assert everything exists as expected
-    // first_from_world
-    // create in world 2
-    // assert everything exists as expected, except the non-group component
-    // non-group component still exists in world 1
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: None,
+    };
+    let entity = player.create(&mut world);
+
+    // Add a component that is not part of the group
+    assert_eq!(get(&world, entity), None::<NotInGroup>);
+    insert(&mut world, entity, NotInGroup);
+    assert_eq!(get(&world, entity), Some(NotInGroup));
+
+    assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world, entity), Some(Health(5)));
+    assert_eq!(get(&world, entity), None::<Animation>);
+
+    // Move group to another world
+    let mut world2 = new_world();
+    let (_, player) = PlayerComponents::first_from_world(&world).unwrap();
+    player.create(&mut world2);
+
+    // everything should have been added exactly as-is from the first world
+    assert_eq!(get(&world2, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world2, entity), Some(Health(5)));
+    assert_eq!(get(&world2, entity), None::<Animation>);
+
+    // However, the non-group component should not have been moved
+    assert_eq!(get(&world2, entity), None::<NotInGroup>);
+    // Still exists in first world
+    assert_eq!(get(&world, entity), Some(NotInGroup));
 }
 
 #[test]
 fn moved_components_modify_independently() {
-    // modifying after move doesn't modify the components from the original world the components were moved from
-    unimplemented!()
+    let mut world = new_world();
+    let player = PlayerComponents {
+        position: Position {x: 12, y: 59},
+        health: Health(5),
+        animation: None,
+    };
+    let entity = player.create(&mut world);
+
+    assert_eq!(get(&world, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world, entity), Some(Health(5)));
+    assert_eq!(get(&world, entity), None::<Animation>);
+
+    // Move group to another world
+    let mut world2 = new_world();
+    let (_, player) = PlayerComponents::first_from_world(&world).unwrap();
+    player.create(&mut world2);
+
+    assert_eq!(get(&world2, entity), Some(Position {x: 12, y: 59}));
+    assert_eq!(get(&world2, entity), Some(Health(5)));
+    assert_eq!(get(&world2, entity), None::<Animation>);
+
+    // modifying after move doesn't modify the components from the original world
+    let new_value = Health(32);
+    assert_ne!(get::<Health>(&world2, entity).unwrap(), new_value);
+    insert(&mut world2, entity, new_value);
+    assert_eq!(get(&world2, entity), Some(new_value));
+    // first world is still the same
+    assert_eq!(get(&world, entity), Some(Health(5)));
+    assert_ne!(get::<Health>(&world, entity).unwrap(), new_value);
 }
 
 #[test]
