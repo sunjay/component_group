@@ -43,7 +43,6 @@ fn inner_option_type(path: &Path) -> Option<&Type> {
 /// The ty field of this struct is assumed to implement Component
 /// is_optional represents that this type may not be present in the World and that we should
 /// store None if that is the case
-#[derive(Debug)]
 pub struct ComponentField<'a> {
     pub ident: &'a Ident,
     pub ty: &'a Type,
