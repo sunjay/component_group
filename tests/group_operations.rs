@@ -101,7 +101,7 @@ fn load_change_after_modifying() {
     let entity = player.create(&mut world);
 
     // should be able to observe created components with from_world and first_from_world
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
     assert_eq!(loaded_player.position, Position {x: 12, y: 59});
     assert_eq!(loaded_player.health, Health(5));
     assert_eq!(loaded_player.animation, None);
@@ -119,7 +119,7 @@ fn load_change_after_modifying() {
     insert(&mut world, entity, new_value);
 
     // should be the changed value with everything else untouched
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
     assert_eq!(loaded_player.position, Position {x: 12, y: 59});
     assert_eq!(loaded_player.health, new_value);
     assert_eq!(loaded_player.animation, None);
@@ -195,14 +195,14 @@ fn load_without_required_component() {
     let entity = player.create(&mut world);
 
     // Starts by returning successfully since we added a complete instance of the group
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
     assert_eq!(loaded_player.position, Position {x: 12, y: 59});
     assert_eq!(loaded_player.health, Health(5));
     assert_eq!(loaded_player.animation, None);
 
     // If a required component is removed, panics!
     remove::<Health>(&mut world, entity);
-    PlayerComponents::from_world(entity, &world);
+    PlayerComponents::from_world(&world, entity);
 }
 
 #[test]
@@ -216,7 +216,7 @@ fn load_without_optional_component() {
     let entity = player.create(&mut world);
 
     // Starts by returning successfully since we added a complete instance of the group
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
 
     // Make sure that optional component currently exists
     assert_eq!(loaded_player.animation, Some(Animation {frame: 2}));
@@ -224,7 +224,7 @@ fn load_without_optional_component() {
     remove::<Animation>(&mut world, entity);
 
     // should still succeed, but that field should now be None
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
     assert_eq!(loaded_player.animation, None);
 
     // Re-inserting the optional component with a different value
@@ -232,7 +232,7 @@ fn load_without_optional_component() {
     insert(&mut world, entity, new_value);
 
     // should still succeed, but that field should now be Some(...)
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
     assert_eq!(loaded_player.animation, Some(new_value));
 }
 
@@ -261,8 +261,8 @@ fn load_multiple() {
 
     // from_world should not return the same components for distinct entities
     // since both the entities and their components are different
-    let loaded_player1 = PlayerComponents::from_world(entity1, &world);
-    let loaded_player2 = PlayerComponents::from_world(entity2, &world);
+    let loaded_player1 = PlayerComponents::from_world(&world, entity1);
+    let loaded_player2 = PlayerComponents::from_world(&world, entity2);
     assert_ne!(loaded_player1, loaded_player2);
 
     // first_from_world should always return the same value
@@ -285,7 +285,7 @@ fn update_with_non_group_component() -> Result<(), SpecsError> {
         animation: Some(Animation {frame: 2}),
     };
     let entity = player.create(&mut world);
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
 
     // Add a component that is not part of the group
     insert(&mut world, entity, NotInGroup);
@@ -297,10 +297,10 @@ fn update_with_non_group_component() -> Result<(), SpecsError> {
         health: Health(8),
         animation: Some(Animation {frame: 4}),
     };
-    player.update(entity, &mut world)?;
+    player.update(&mut world, entity)?;
 
     // All values part of the group should be changed
-    let updated_player = PlayerComponents::from_world(entity, &world);
+    let updated_player = PlayerComponents::from_world(&world, entity);
     assert_ne!(loaded_player, updated_player);
 
     // update should not update components that aren't in the group
@@ -329,7 +329,7 @@ fn update_optional_field() -> Result<(), SpecsError> {
         // None - update should now explicitly remove the component
         animation: None,
     };
-    player.update(entity, &mut world)?;
+    player.update(&mut world, entity)?;
 
     // Optional component is now gone
     assert_eq!(get(&world, entity), None::<Animation>);
@@ -341,7 +341,7 @@ fn update_optional_field() -> Result<(), SpecsError> {
         // Some - update should now explicitly insert the component
         animation: Some(Animation {frame: frame2}),
     };
-    player.update(entity, &mut world)?;
+    player.update(&mut world, entity)?;
 
     // Optional component has been re-inserted
     assert_ne!(get(&world, entity), Some(Animation {frame}));
@@ -354,7 +354,7 @@ fn update_optional_field() -> Result<(), SpecsError> {
         // Some - update should now explicitly change the component value
         animation: Some(Animation {frame: frame3}),
     };
-    player.update(entity, &mut world)?;
+    player.update(&mut world, entity)?;
 
     // Optional component has been changed
     assert_ne!(get(&world, entity), Some(Animation {frame}));
@@ -373,7 +373,7 @@ fn update_should_overwrite() -> Result<(), SpecsError> {
         animation: Some(Animation {frame: 2}),
     };
     let entity = player.create(&mut world);
-    let loaded_player = PlayerComponents::from_world(entity, &world);
+    let loaded_player = PlayerComponents::from_world(&world, entity);
 
     // This value should get overwritten by update
     let overwritten_value = Health(100);
@@ -383,7 +383,7 @@ fn update_should_overwrite() -> Result<(), SpecsError> {
     assert_eq!(get(&world, entity), Some(overwritten_value));
 
     // Update to the original values
-    loaded_player.update(entity, &mut world)?;
+    loaded_player.update(&mut world, entity)?;
 
     // Overwritten value should be changed
     assert_ne!(get(&world, entity), Some(overwritten_value));
@@ -479,7 +479,7 @@ fn remove_with_non_group_components() {
     assert_eq!(get(&world, entity), Some(NotInGroup));
 
     // Remove the group from the world
-    let removed_player = PlayerComponents::remove(entity, &mut world);
+    let removed_player = PlayerComponents::remove(&mut world, entity);
     assert_eq!(removed_player.position, Position {x: 12, y: 59});
     assert_eq!(removed_player.health, Health(5));
     assert_eq!(removed_player.animation, Some(Animation {frame: 2}));
@@ -506,7 +506,7 @@ fn remove_required_component_not_present() {
 
     // If a required component is not present for removal, panics!
     remove::<Health>(&mut world, entity);
-    PlayerComponents::remove(entity, &mut world);
+    PlayerComponents::remove(&mut world, entity);
 }
 
 #[test]
@@ -525,7 +525,7 @@ fn remove_optional_component_not_present() {
     remove::<Animation>(&mut world, entity);
 
     // Remove succeeds without panicking, but sets that field to None
-    let removed_player = PlayerComponents::remove(entity, &mut world);
+    let removed_player = PlayerComponents::remove(&mut world, entity);
     assert_eq!(removed_player.position, Position {x: 12, y: 59});
     assert_eq!(removed_player.health, Health(5));
     assert_eq!(removed_player.animation, None);

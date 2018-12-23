@@ -57,7 +57,7 @@ impl ComponentGroup for PlayerComponents {
             }))
     }
 
-    fn from_world(entity: Entity, world: &World) -> Self {
+    fn from_world(world: &World, entity: Entity) -> Self {
         // Needs to be updated every time the struct changes
         let (positions, velocities, healths) = world.system_data::<(
             ReadStorage<Position>,
@@ -92,7 +92,7 @@ impl ComponentGroup for PlayerComponents {
             .build()
     }
 
-    fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError> {
+    fn update(self, world: &mut World, entity: Entity) -> Result<(), Self::UpdateError> {
         // don't update if position is out of bounds
         let Position {x, y} = self.position;
         if x < -20 || y < -20 || x > 20 || y > 20 {
@@ -112,7 +112,7 @@ impl ComponentGroup for PlayerComponents {
         Ok(())
     }
 
-    fn remove(entity: Entity, world: &mut World) -> Self {
+    fn remove(world: &mut World, entity: Entity) -> Self {
         // Needs to be updated every time the struct changes
         let (mut positions, mut velocities, mut healths) = world.system_data::<(
             WriteStorage<Position>,

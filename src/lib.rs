@@ -252,7 +252,7 @@
 //!             }))
 //!     }
 //!
-//!     fn from_world(entity: Entity, world: &World) -> Self {
+//!     fn from_world(world: &World, entity: Entity) -> Self {
 //!         // Needs to be updated every time the struct changes
 //!         let (positions, velocities, healths) = world.system_data::<(
 //!             ReadStorage<Position>,
@@ -287,7 +287,7 @@
 //!             .build()
 //!     }
 //!
-//!     fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError> {
+//!     fn update(self, world: &mut World, entity: Entity) -> Result<(), Self::UpdateError> {
 //!         // Needs to be updated every time the struct changes
 //!         let (mut positions, mut velocities, mut healths) = world.system_data::<(
 //!             WriteStorage<Position>,
@@ -301,7 +301,7 @@
 //!         Ok(())
 //!     }
 //!
-//!     fn remove(entity: Entity, world: &mut World) -> Self {
+//!     fn remove(world: &mut World, entity: Entity) -> Self {
 //!         // Needs to be updated every time the struct changes
 //!         let (mut positions, mut velocities, mut healths) = world.system_data::<(
 //!             WriteStorage<Position>,
@@ -348,7 +348,7 @@
 //!     // Somehow find the player in the world it was just in
 //!     let player_entity = find_player_entity(&level1);
 //!     // Extract the player from the world it was just in
-//!     let player = PlayerComponents::from_world(player_entity, &level1);
+//!     let player = PlayerComponents::from_world(&level1, player_entity);
 //!     // Add it to the next world since it hasn't been added yet
 //!     player.create(&mut level2);
 //!
@@ -360,7 +360,7 @@
 //!     let (_, player) = PlayerComponents::first_from_world(&level2).unwrap();
 //!     let player_entity = find_player_entity(&level1);
 //!     // Move the player back
-//!     player.update(player_entity, &mut level1)?;
+//!     player.update(&mut level1, player_entity)?;
 //!
 //!     Ok(())
 //! }
@@ -429,7 +429,7 @@
 //!     // Somehow find the player in the world it was just in
 //!     let player_entity = find_player_entity(&level1);
 //!     // Extract the player from the world it was just in
-//!     let player = PlayerComponents::from_world(player_entity, &level1);
+//!     let player = PlayerComponents::from_world(&level1, player_entity);
 //!     // Add it to the next world since it hasn't been added yet
 //!     player.create(&mut level2);
 //!
@@ -441,7 +441,7 @@
 //!     let (_, player) = PlayerComponents::first_from_world(&level2).unwrap();
 //!     let player_entity = find_player_entity(&level1);
 //!     // Move the player back
-//!     player.update(player_entity, &mut level1)?;
+//!     player.update(&mut level1, player_entity)?;
 //!
 //!     Ok(())
 //! }
@@ -512,7 +512,7 @@
 //!     // the field will be set to Some(animation_component) where animation_component is the
 //!     // instance of the Animation component that was added. Otherwise, the field will be None.
 //!     let player_entity = find_player_entity(&level1);
-//!     let player = PlayerComponents::from_world(player_entity, &level1);
+//!     let player = PlayerComponents::from_world(&level1, player_entity);
 //!     player.create(&mut level2);
 //!
 //!     // ...
@@ -524,7 +524,7 @@
 //!     let player_entity = find_player_entity(&level1);
 //!     // If the animation field is not None, we will call Storage::insert and add it to the
 //!     // component's storage. Otherwise, we will call Storage::remove and get rid of it.
-//!     player.update(player_entity, &mut level1)?;
+//!     player.update(&mut level1, player_entity)?;
 //!
 //!     Ok(())
 //! }
@@ -675,7 +675,7 @@ pub trait ComponentGroup: Sized {
     /// Panics if one of the component fields could not be populated. This can happen if the
     /// component does not exist for this entity. If the field is an `Option` type, its value will
     /// be set to `None` instead of panicking.
-    fn from_world(entity: Entity, world: &World) -> Self;
+    fn from_world(world: &World, entity: Entity) -> Self;
 
     /// Creates a new entity in the world and adds all the components from this group to that entity.
     ///
@@ -688,7 +688,7 @@ pub trait ComponentGroup: Sized {
     ///
     /// Note: Any additional components that the entity has other than the ones covered by
     /// the fields of this group will be left untouched.
-    fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError>;
+    fn update(self, world: &mut World, entity: Entity) -> Result<(), Self::UpdateError>;
 
     /// Removes all the components from this group from their storages in the given world for the
     /// given entity. Returns the values of the removed components.
@@ -698,5 +698,5 @@ pub trait ComponentGroup: Sized {
     ///
     /// Panics if one of the required component fields was not present for removal. If the field is
     /// an `Option` type, its value will be set to `None` instead of panicking.
-    fn remove(entity: Entity, world: &mut World) -> Self;
+    fn remove(world: &mut World, entity: Entity) -> Self;
 }

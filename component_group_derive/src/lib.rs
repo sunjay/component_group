@@ -117,7 +117,7 @@ fn from_world_method(field_names: &[&Ident], fields: &[ComponentField]) -> Token
         }
     });
     quote! {
-        fn from_world(entity: specs::Entity, world: &specs::World) -> Self {
+        fn from_world(world: &specs::World, entity: specs::Entity) -> Self {
             let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
 
             Self {
@@ -166,7 +166,7 @@ fn update_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStre
     });
     quote! {
         type UpdateError = specs::error::Error;
-        fn update(self, entity: specs::Entity, world: &mut specs::World) -> Result<(), Self::UpdateError> {
+        fn update(self, world: &mut specs::World, entity: specs::Entity) -> Result<(), Self::UpdateError> {
             let ( #(mut #field_names),* ) = world.system_data::<( #( specs::WriteStorage<#tys> ),* )>();
 
             #( #updates )*
@@ -187,7 +187,7 @@ fn remove_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStre
         }
     });
     quote! {
-        fn remove(entity: specs::Entity, world: &mut specs::World) -> Self {
+        fn remove(world: &mut specs::World, entity: specs::Entity) -> Self {
             let ( #(mut #field_names),* ) = world.system_data::<( #(specs::WriteStorage<#tys>),* )>();
 
             Self {
