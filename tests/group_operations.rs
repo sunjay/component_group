@@ -10,10 +10,6 @@ pub struct Position {x: i32, y: i32}
 
 #[derive(Debug, Clone, Component, PartialEq, Eq)]
 #[storage(VecStorage)]
-pub struct Velocity {x: i32, y: i32}
-
-#[derive(Debug, Clone, Component, PartialEq, Eq)]
-#[storage(VecStorage)]
 pub struct Health(u32);
 
 #[derive(Debug, Clone, Copy, Component, PartialEq, Eq)]
@@ -27,10 +23,18 @@ pub struct NotInGroup;
 #[derive(ComponentGroup)]
 struct PlayerComponents {
     position: Position,
-    velocity: Velocity,
     health: Health,
     // This component is allowed to not be present
     animation: Option<Animation>,
+}
+
+fn new_world() -> World {
+    let mut world = World::new();
+    world.register::<Position>();
+    world.register::<Health>();
+    world.register::<Animation>();
+    world.register::<NotInGroup>();
+    world
 }
 
 fn get<C: Component + Clone>(world: &World, entity: Entity) -> Option<C> {
@@ -43,112 +47,136 @@ fn insert<C: Component + Clone>(world: &mut World, entity: Entity, value: C) {
     storage.insert(entity, value).unwrap();
 }
 
+fn remove<C: Component + Clone>(world: &mut World, entity: Entity) {
+    let mut storage = world.system_data::<WriteStorage<C>>();
+    storage.remove(entity).unwrap();
+}
+
 #[test]
-fn move_between_levels() -> Result<(), SpecsError> {
-    let mut level1 = World::new();
-    level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>(); level1.register::<Animation>(); level1.register::<NotInGroup>();
-    let player = PlayerComponents {
-        position: Position {x: 12, y: 59},
-        velocity: Velocity {x: -1, y: 2},
-        health: Health(5),
-        animation: None, // Not animated to begin with
-    };
-    let player_entity = player.create(&mut level1);
+fn create_with_optional_component() {
+    // required - added
+    // optional, None - not added
+    // optional, Some() - added
+    unimplemented!()
+}
 
-    // Insert an entity that isn't in the group
-    insert(&mut level1, player_entity, NotInGroup);
+#[test]
+fn load_change_after_modifying() {
+    // create
+    // get -> should have old value
+    // from_world -> should have old_value
+    // insert(new_value)
+    // get -> should have new value
+    // from_world -> should have new_value
+    unimplemented!()
+}
 
-    assert_eq!(get(&level1, player_entity), Some(Position {x: 12, y: 59}));
-    assert_eq!(get(&level1, player_entity), Some(Velocity {x: -1, y: 2}));
-    assert_eq!(get(&level1, player_entity), Some(Health(5)));
-    assert_eq!(get::<Animation>(&level1, player_entity), None);
-    // Should exist
-    assert_eq!(get(&level1, player_entity), Some(NotInGroup));
+#[test]
+fn load_first_without_required_component() {
+    // first_from_world - returns None before group is ever inserted
 
-    // Modify entity
-    let new_health = 100;
-    // unwrap() to make sure that this is still Some but the inner value is different
-    assert_ne!(get::<Health>(&level1, player_entity).unwrap(), Health(new_health));
-    insert(&mut level1, player_entity, Health(new_health));
-    // Should have changed
-    assert_eq!(get(&level1, player_entity), Some(Health(new_health)));
+    // first_from_world - load group that is only partially in the world
+    // should return None
+    unimplemented!()
+}
 
-    /////// Player needs to move on to the next level ///////
+#[test]
+fn load_first_without_optional_component() {
+    // first_from_world - returns None before group is ever inserted
 
-    let mut level2 = World::new();
-    level2.register::<Position>(); level2.register::<Velocity>(); level2.register::<Health>(); level2.register::<Animation>(); level2.register::<NotInGroup>();
-    let player = PlayerComponents::from_world(player_entity, &level1);
-    // Should be the changed value
-    assert_eq!(player.health, Health(new_health));
-    let player_entity2 = player.create(&mut level2);
+    // first_from_world - load group that is only partially in the world
+    // should return Some, but have None for that component
+    unimplemented!()
+}
 
-    // All values should be present
-    assert_eq!(get(&level2, player_entity2), Some(Position {x: 12, y: 59}));
-    assert_eq!(get(&level2, player_entity2), Some(Velocity {x: -1, y: 2}));
-    assert_eq!(get(&level2, player_entity2), Some(Health(new_health)));
-    assert_eq!(get::<Animation>(&level2, player_entity2), None);
+#[test]
+#[should_panic(expected = "")]
+fn load_without_required_component() {
+    // create
+    // from_world - succeeds and has the value for that field
+    // remove(required component)
+    // from_world - panics if a required component can't be loaded
+    unimplemented!()
+}
 
-    // Should not have been added to level 2
-    assert_eq!(get::<NotInGroup>(&level2, player_entity2), None);
+#[test]
+fn load_without_optional_component() {
+    // create
+    // from_world - succeeds and has the value for that field
+    // remove(optional component)
+    // from_world - does not panic and just returns None for that field
+    // insert(optional component)
+    // from_world - succeeds and has the value for that field
+    unimplemented!()
+}
 
-    // Modify animation
-    let animation = Animation {frame: 11};
-    insert(&mut level2, player_entity2, animation);
-    assert_eq!(get(&level2, player_entity2), Some(animation));
+#[test]
+fn load_multiple() {
+    // create x2
+    // from_world x2
+    // values should be different (i.e. same entity is not always loaded)
+    // first_from_world should always be the first created
+    unimplemented!()
+}
 
-    // Modifications to level 2 should not impact level 1
-    assert_eq!(get(&level1, player_entity), Some(Position {x: 12, y: 59}));
-    assert_eq!(get(&level1, player_entity), Some(Velocity {x: -1, y: 2}));
-    assert_eq!(get(&level1, player_entity), Some(Health(new_health)));
-    assert_eq!(get::<Animation>(&level1, player_entity), None);
-    // Should exist
-    assert_eq!(get(&level1, player_entity), Some(NotInGroup));
+#[test]
+fn update_with_non_group_component() {
+    // update should not update components that aren't in the group
+    unimplemented!()
+}
 
-    // Modifications to level 1 should be overwritten during update
-    let overwritten_health = 1234;
-    // unwrap() to make sure that this is still Some but the inner value is different
-    assert_ne!(get::<Health>(&level1, player_entity).unwrap(), Health(overwritten_health));
-    insert(&mut level1, player_entity, Health(overwritten_health));
-    assert_eq!(get(&level1, player_entity), Some(Health(overwritten_health)));
+#[test]
+fn update_optional_field() {
+    // Updating to None - component is removed
+    // Updating to Some - component is inserted
+    // Updating to Some (again) - component is updated to new value
+    unimplemented!()
+}
 
-    /////// Player needs to go back to previous level ///////
+#[test]
+fn update_should_overwrite() {
+    // create
+    // loaded = first_from_world()
+    // insert() - modifies a component
+    // first_from_world - has the modified values
+    // update(loaded)
+    // first_from_world - has the values of loaded, not the modified values
+    unimplemented!()
+}
 
-    let (_, player) = PlayerComponents::first_from_world(&level2).unwrap();
-    // Should still be animated
-    assert_eq!(player.animation, Some(animation));
-    player.update(player_entity, &mut level1)?;
+#[test]
+fn move_non_group_should_not_be_moved() {
+    // create in world 1
+    // insert(non group)
+    // assert everything exists as expected
+    // first_from_world
+    // create in world 2
+    // assert everything exists as expected, except the non-group component
+    // non-group component still exists in world 1
+    unimplemented!()
+}
 
-    // Overwrite of health succeeded
-    assert_ne!(get(&level1, player_entity), Some(Health(overwritten_health)));
+#[test]
+fn moved_components_modify_independently() {
+    // modifying after move doesn't modify the components from the original world the components were moved from
+    unimplemented!()
+}
 
-    // All values should be overwritten
-    assert_eq!(get(&level1, player_entity), Some(Position {x: 12, y: 59}));
-    assert_eq!(get(&level1, player_entity), Some(Velocity {x: -1, y: 2}));
-    assert_eq!(get(&level1, player_entity), Some(Health(new_health)));
-    assert_eq!(get(&level1, player_entity), Some(animation));
+#[test]
+fn remove_does_not_remove_non_group_components() {
+    // non-group component still exists
+    unimplemented!()
+}
 
-    // Should not get overwritten since not in group
-    assert_eq!(get(&level1, player_entity), Some(NotInGroup));
-    assert_eq!(get::<NotInGroup>(&level2, player_entity2), None);
+#[test]
+#[should_panic(expected = "")]
+fn remove_required_component_not_present() {
+    // panics if a required component could not be removed
+    unimplemented!()
+}
 
-    // Remove player from first level
-    PlayerComponents::remove(player_entity, &mut level1);
-
-    // All components *in the group* should be gone
-    assert_eq!(get::<Position>(&level1, player_entity), None);
-    assert_eq!(get::<Velocity>(&level1, player_entity), None);
-    assert_eq!(get::<Health>(&level1, player_entity), None);
-    assert_eq!(get::<Animation>(&level1, player_entity), None);
-
-    // Components *not in the group* should still exist (not removed)
-    assert_eq!(get(&level1, player_entity), Some(NotInGroup));
-
-    // Removing all the components in the group from one world should not affect the other
-    assert_eq!(get(&level2, player_entity2), Some(Position {x: 12, y: 59}));
-    assert_eq!(get(&level2, player_entity2), Some(Velocity {x: -1, y: 2}));
-    assert_eq!(get(&level2, player_entity2), Some(Health(new_health)));
-    assert_eq!(get::<Animation>(&level2, player_entity2), Some(animation));
-    assert_eq!(get::<NotInGroup>(&level2, player_entity2), None);
-
-    Ok(())
+#[test]
+fn remove_optional_component_not_present() {
+    // sets the field to None if it was optional and not present in the world during remove
+    unimplemented!()
 }
