@@ -475,7 +475,7 @@
 //!     velocity: Velocity,
 //!     health: Health,
 //!     // This component is allowed to not be present
-//!     animation: Option<Animation>
+//!     animation: Option<Animation>,
 //! }
 //!
 //! # fn find_player_entity(world: &World) -> specs::Entity {
