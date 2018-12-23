@@ -6,7 +6,7 @@ edition = "2018"
 description = "Automatic derive for the ComponentGroup trait"
 repository = "https://github.com/sunjay/component_group"
 readme = "README.md"
-keywords = ["specs", "component", "group", "ComponentGroup", "gamedev", "ecs"]
+keywords = ["specs", "component", "group", "gamedev", "ecs"]
 # crates.io/category_slugs
 categories = ["game-engines"]
 license = "MPL-2.0"

@@ -11,7 +11,7 @@ edition = "2018"
 description = "Defines the ComponentGroup trait for managing a group of specs::Component instances and moving them between specs::Worlds"
 repository = "https://github.com/sunjay/component_group"
 readme = "README.md"
-keywords = ["specs", "component", "group", "ComponentGroup", "gamedev", "ecs"]
+keywords = ["specs", "component", "group", "gamedev", "ecs"]
 # crates.io/category_slugs
 categories = ["game-engines"]
 license = "MPL-2.0"
