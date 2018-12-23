@@ -639,9 +639,8 @@ pub trait ComponentGroup: Sized {
     /// This method is convenient if you know that there is exactly one instance of a this group in
     /// the world.
     ///
-    /// Panics if one of the component fields could not be populated. This can happen if the
-    /// component does not exist for this entity. If the field is an `Option` type, its value will
-    /// be set to `None` instead of panicking.
+    /// Returns `None` if any of the required fields could not be populated. Fields with an
+    /// `Option` type will be set to `None` if their component could not be populated.
     fn first_from_world(world: &World) -> Option<Self>;
     /// Extracts this group of components for the given entity from the given world.
     ///
