@@ -30,6 +30,8 @@ trait Foo {}
 //~| ERROR no method named `get` found for type
 //~| ERROR no method named `insert` found for type
 //~| ERROR no method named `insert` found for type
+//~| ERROR no method named `remove` found for type
+//~| ERROR no method named `remove` found for type
 struct MissingBounds<T: Foo, U> { // Missing Component + Clone bounds
     position: Position,
     foo: T,

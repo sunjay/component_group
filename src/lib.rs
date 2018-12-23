@@ -293,6 +293,25 @@
 //!         healths.insert(entity, self.health)?;
 //!         Ok(())
 //!     }
+//!
+//!     fn remove(entity: Entity, world: &mut World) -> Self {
+//!         // Needs to be updated every time the struct changes
+//!         let (mut positions, mut velocities, mut healths) = world.system_data::<(
+//!             WriteStorage<Position>,
+//!             WriteStorage<Velocity>,
+//!             WriteStorage<Health>,
+//!         )>();
+//!         Self {
+//!             // If any of these fields were Clone, we could call Option::cloned on the result
+//!             // of `get(entity)` and avoid some of this boilerplate
+//!             position: positions.remove(entity).map(|pos| Position {x: pos.x, y: pos.y})
+//!                 .expect("bug: expected a Position component to be present"),
+//!             velocity: velocities.remove(entity).map(|vel| Velocity {x: vel.x, y: vel.y})
+//!                 .expect("bug: expected a Velocity component to be present"),
+//!             health: healths.remove(entity).map(|health| Health(health.0))
+//!                 .expect("bug: expected a Health component to be present"),
+//!         }
+//!     }
 //! }
 //!
 //! # fn find_player_entity(world: &World) -> Entity {
@@ -660,4 +679,14 @@ pub trait ComponentGroup: Sized {
     /// Note: Any additional components that the entity has other than the ones covered by
     /// the fields of this group will be left untouched.
     fn update(self, entity: Entity, world: &mut World) -> Result<(), Self::UpdateError>;
+
+    /// Removes all the components from this group from their storages in the given world for the
+    /// given entity.
+    ///
+    /// Returns the values of each field that were previously present.
+    ///
+    /// Panics if one of the component fields could not be populated. This can happen if the
+    /// component does not exist for this entity. If the field is an `Option` type, its value will
+    /// be set to `None` instead of panicking.
+    fn remove(entity: Entity, world: &mut World) -> Self;
 }

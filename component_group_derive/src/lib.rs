@@ -67,12 +67,14 @@ fn impl_component_group<'a>(
     let from_world = from_world_method(&field_names, &fields);
     let create = create_method(&fields);
     let update = update_method(&field_names, &fields);
+    let remove = remove_method(&field_names, &fields);
     quote! {
         impl #impl_generics component_group::ComponentGroup for #ident #ty_generics #where_clause {
             #first_from_world
             #from_world
             #create
             #update
+            #remove
         }
     }
 }
@@ -170,6 +172,27 @@ fn update_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStre
             #( #updates )*
 
             Ok(())
+        }
+    }
+}
+
+fn remove_method(field_names: &[&Ident], fields: &[ComponentField]) -> TokenStream {
+    let tys = fields.into_iter().map(|f| f.ty);
+    let reads = fields.into_iter().map(|&ComponentField {ident: field_name, ty, is_optional}| {
+        if is_optional {
+            quote! {#field_name.remove(entity)}
+        } else {
+            let err = format!("bug: expected a {} component to be present", quote!(#ty));
+            quote! {#field_name.remove(entity).expect(#err)}
+        }
+    });
+    quote! {
+        fn remove(entity: specs::Entity, world: &mut specs::World) -> Self {
+            let ( #(mut #field_names),* ) = world.system_data::<( #(specs::WriteStorage<#tys>),* )>();
+
+            Self {
+                #( #field_names : #reads ),*
+            }
         }
     }
 }

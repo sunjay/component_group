@@ -47,6 +47,8 @@ struct Neither;
 //~| ERROR no method named `get` found for type `specs::Storage<'_, Neither, specs::shred::Fetch<'_, specs::storage::MaskedStorage<Neither>>>` in the current scope [E0599]
 //~| ERROR no method named `insert` found for type `specs::Storage<'_, NotImplComponent, specs::shred::FetchMut<'_, specs::storage::MaskedStorage<NotImplComponent>>>` in the current scope [E0599]
 //~| ERROR no method named `insert` found for type `specs::Storage<'_, Neither, specs::shred::FetchMut<'_, specs::storage::MaskedStorage<Neither>>>` in the current scope [E0599]
+//~| ERROR no method named `remove` found for type `specs::Storage<'_, NotImplComponent, specs::shred::FetchMut<'_, specs::storage::MaskedStorage<NotImplComponent>>>` in the current scope [E0599]
+//~| ERROR no method named `remove` found for type `specs::Storage<'_, Neither, specs::shred::FetchMut<'_, specs::storage::MaskedStorage<Neither>>>` in the current scope [E0599]
 //~| ERROR no method named `join` found for type
 struct PlayerComponents2 {
     position: Option<Position>,
