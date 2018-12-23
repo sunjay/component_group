@@ -29,12 +29,18 @@
 //! #[storage(VecStorage)]
 //! pub struct Health(u32);
 //!
+//! #[derive(Debug, Clone, Component)]
+//! #[storage(HashMapStorage)]
+//! pub struct Animation {frame: usize}
+//!
 //! // This is all of the code you need to write to define the group and its operations!
 //! #[derive(ComponentGroup)]
 //! struct PlayerComponents {
 //!     position: Position,
 //!     velocity: Velocity,
 //!     health: Health,
+//!     // This optional component is allowed to not be present
+//!     animation: Option<Animation>,
 //! }
 //!
 //! // Now you can easily add all of these components to an entity, load them all
@@ -50,7 +56,7 @@
 //! * [Motivation](#motivation)
 //! * [Manually Implementing `ComponentGroup`](#manually-implementing-componentgroup)
 //! * [Automatically Implementing `ComponentGroup`](#automatically-implementing-componentgroup)
-//! * [Optional Fields](#optional-fields)
+//! * [Optional Components](#optional-components)
 //! * [Fetching Multiple Component Group Instances](#fetching-multiple-component-group-instances)
 //! * [Generic Component Groups](#generic-component-groups)
 //!
@@ -441,7 +447,7 @@
 //! }
 //! ```
 //!
-//! # Optional Fields
+//! # Optional Components
 //!
 //! You can also use `Option` to ignore part of the group if it isn't specified during creation or
 //! if it isn't available in the `World` during extraction. If the field is `None`, a call to
@@ -474,7 +480,7 @@
 //!     position: Position,
 //!     velocity: Velocity,
 //!     health: Health,
-//!     // This component is allowed to not be present
+//!     // This optional component is allowed to not be present
 //!     animation: Option<Animation>,
 //! }
 //!

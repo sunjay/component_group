@@ -44,12 +44,18 @@ pub struct Velocity {x: i32, y: i32}
 #[storage(VecStorage)]
 pub struct Health(u32);
 
+#[derive(Debug, Clone, Component)]
+#[storage(HashMapStorage)]
+pub struct Animation {frame: usize}
+
 // This is all of the code you need to write to define the group and its operations!
 #[derive(ComponentGroup)]
 struct PlayerComponents {
     position: Position,
     velocity: Velocity,
     health: Health,
+    // This optional component is allowed to not be present
+    animation: Option<Animation>,
 }
 
 // Now you can easily add all of these components to an entity, load them all
