@@ -8,16 +8,16 @@
 This crate defines the `ComponentGroup` trait. This trait is used to make
 managing a group of [`specs::Component`] instances easier. This is useful for
 when you have several components that are often created, read, and updated
-together. You can even use this trait to move the entire group of components
+together. You can use this trait to easily move an entire group of components
 between instances of [`specs::World`].
 
 Instead of having you keep duplicate code in sync across your application, this
-trait groups all of that logic in one place so you can minimize the changes you
-need to make every time you add a component to the group.
+trait groups all of that logic in one place so you can focus and minimize the
+changes you need to make every time you add a component to the group.
 
-The `ComponentGroup` trait can be automatically derived. This removes any of the
-boilerplate you may have needed to write in order to implement the trait
-yourself.
+The `ComponentGroup` trait can be automatically derived if each component in the
+group implements the `Clone` trait. This removes any of the boilerplate you may
+have needed to write in order to implement the trait yourself.
 
 See [**the documentation**][docs] for more details about the motivations for
 creating this trait and how to use it.

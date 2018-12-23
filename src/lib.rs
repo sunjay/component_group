@@ -1,7 +1,7 @@
 //! This crate defines the [`ComponentGroup`] trait.
 //! This trait is used to make managing a group of [`specs::Component`] instances easier.
 //! This is useful for when you have several components that are often created, read, and updated
-//! together. You can even use this trait to move the entire group of components between instances
+//! together. You can use this trait to easily move an entire group of components between instances
 //! of [`specs::World`].
 //!
 //! This crate also provides a custom derive (documented below) that you can use to automatically
@@ -15,8 +15,9 @@
 //! # use specs_derive::Component;
 //!
 //! // These components are just for demonstration purposes. You should swap them
-//! // out for your own. Components need to be Clone to use the automatic derive.
+//! // out for your own.
 //!
+//! // Components need to implement Clone to use the automatic derive.
 //! #[derive(Debug, Clone, Component)]
 //! #[storage(VecStorage)]
 //! pub struct Position {x: i32, y: i32}
@@ -141,7 +142,7 @@
 //!     // Player needs to go back to previous level
 //!     // Find the player in level **2**
 //!     let player_entity = find_player_entity(&level2);
-//!     // That means that we need to now duplicate everything from the above again!
+//!     // That means that we need to now duplicate everything from above again!
 //!     // This time we're fetching from level2, not level1
 //!     let (positions, velocities, healths) = level2.system_data::<(
 //!         ReadStorage<Position>,
@@ -154,11 +155,11 @@
 //!         .expect("expected a Velocity component to be present");
 //!     let health = healths.get(player_entity).map(|health| Health(health.0))
 //!         .expect("expected a Health component to be present");
-//!     // Now that we have the components, we need to re-add them. However, we have to first
-//!     // find the player in level **1**
+//!     // Now that we have the components, we need to re-add them to level **1** for the right
+//!     // entity.
 //!     let player_entity = find_player_entity(&level1);
 //!     // Now we need to fetch write storages for every component, essentially duplicating the
-//!     // code again! Have to make sure we insert into level **1**
+//!     // code again! This time making sure we get the storages in level **1**
 //!     let (mut positions, mut velocities, mut healths) = level1.system_data::<(
 //!         WriteStorage<Position>,
 //!         WriteStorage<Velocity>,
@@ -173,23 +174,21 @@
 //! }
 //! ```
 //!
-//! Notice how much there is to keep track of in this code! The slightest typo can result in
-//! completely incorrect behaviour and very hard to track down bugs. Modifying this code is even
-//! worse because you have to search through everywhere you could have added or modified a
-//! component and make sure that area gets updated. These changes can propogate throughout your
-//! entire codebase and make it very difficult to modify as the number of components grows.
+//! There is a lot of duplication in this code! Many of the duplicated pieces of code have slight
+//! differences like which world the components are being fetched from or whether we wanted
+//! a `ReadStorage` or a `WriteStorage`.The purpose of this crate is to take all of that
+//! duplication and make reusable methods that operate on all of the components at once.
 //!
-//! This crate is designed to provide a more sustainable approach to this problem. Rather than
-//! trying to manage ad-hoc groups of components that could change in any part of the code at any
-//! given time, the trait provided by this crate groups all of the components together in a single
-//! struct. The code that needs to be written for the operations on these components is unavoidable
-//! given the API that specs provides, but at least you can make it easier by grouping everything
-//! into a single place.
+//! Instead of having to keep track of all of this code throughout your codebase, implementing the
+//! `ComponentGroup` trait puts it all in one place. This makes updating your group much less
+//! error-prone because adding/modifying/removing a component to/from the group only requires
+//! modifying one area of code.
 //!
-//! We've tried to make it even easier than that too by providing a way to automatically derive the
-//! trait as long as your components implement the `Clone` trait. That means that you can actually
-//! get all of the benefits of this trait by just defining a single struct. Everything else is done
-//! automatically!
+//! The code that needs to be written to operate on all of these components together is
+//! unavoidable given the API that specs provides, but at least you can make it easier by using
+//! this crate. We've eliminated the need to write most of the repetitive code you saw above by
+//! allowing you to automatically derive the `ComponentGroup` trait. All you need to do is define
+//! the components in the group and everything else is generated for you.
 //!
 //! The next section of the documentation shows you how to manually implement the [`ComponentGroup`]
 //! trait for a given group of components. This is still a lot of boilerplate, but it is all
@@ -213,7 +212,7 @@
 //! use specs_derive::Component;
 //!
 //! // The one benefit of implementing the trait manually is that you don't need to make the
-//! // fields Clone like you do with the custom derive.
+//! // fields Clone like you do when automatically deriving the trait.
 //! #[derive(Debug, Component)]
 //! #[storage(VecStorage)]
 //! pub struct Position {x: i32, y: i32}
@@ -330,8 +329,10 @@
 //!     let mut level1 = World::new();
 //!     # level1.register::<Position>(); level1.register::<Velocity>(); level1.register::<Health>();
 //!     // Having all the components together in a struct means that Rust will enforce that you
-//!     // never forget a field. You can still forget to add a component to the group.
-//!     // The custom derive below makes it so that adding that is just a one-line change.
+//!     // never forget a field.
+//!     // That being said, it is still possible to forget to add a component to the group. Adding
+//!     // a component to the code above can be tricky and easy to mess up, but if you
+//!     // automatically derive the trait, adding a component can be just a one-line change.
 //!     let player = PlayerComponents {
 //!         position: Position {x: 12, y: 59},
 //!         velocity: Velocity {x: -1, y: 2},
@@ -369,9 +370,9 @@
 //! # Automatically Implementing `ComponentGroup`
 //!
 //! You can also automatically implement the [`ComponentGroup`] trait using `#[derive(ComponentGroup)]`.
-//! This removes all the boilerplate you saw in the example above and automatically provides the
-//! methods in [`ComponentGroup`]. All fields in the struct must implement `Clone` so that they can
-//! be copied within the methods that get implemented.
+//! This removes all the boilerplate you saw in the example above and automatically provides each
+//! of the methods in [`ComponentGroup`]. All fields in the struct must implement `Clone` so that
+//! they can be copied within the methods that get implemented.
 //!
 //! ```rust
 //! // Rust 2018 edition
@@ -653,6 +654,9 @@ use specs::{World, Entity};
 /// Represents a group of [`specs::Component`] fields that can be added or extracted from
 /// a [`specs::World`].
 ///
+/// To automatically derive this trait using `#[derive(ComponentGroup)]`, all components within
+/// the group must implement the `Clone` trait.
+///
 /// See the [top-level crate documentation](index.html) for more details.
 ///
 /// [`specs::Component`]: https://docs.rs/specs/*/specs/trait.Component.html
@@ -697,6 +701,6 @@ pub trait ComponentGroup: Sized {
     /// the fields of this group will be left untouched.
     ///
     /// Panics if one of the required component fields was not present for removal. If the field is
-    /// an `Option` type, its value will be set to `None` instead of panicking.
+    /// an `Option` type, its value when returned will be set to `None` instead of panicking.
     fn remove(world: &mut World, entity: Entity) -> Self;
 }
