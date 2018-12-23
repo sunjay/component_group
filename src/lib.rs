@@ -1,11 +1,12 @@
-//! This crate exposes the [`ComponentGroup`] trait.
+//! This crate defines the [`ComponentGroup`] trait.
 //! This trait is used to make managing a group of [`specs::Component`] instances easier.
-//! This is especially important when reading, writing, or modifying them all as a group across
-//! multiple [`specs::World`] instances.
+//! This is useful for when you have several components that are often created, read, and updated
+//! together. You can even use this trait to move the entire group of components between instances
+//! of [`specs::World`].
 //!
 //! This crate also provides a custom derive (documented below) that you can use to automatically
-//! implement the trait. This can greatly reduce the amount of boilerplate and make modifying your
-//! group of components much easier.
+//! implement the trait. This removes any of the boilerplate you may have needed to write in order
+//! to implement the trait yourself and makes modifying your group of components much easier.
 //!
 //! ```rust,no_run
 //! // Don't forget to add the component_group crate to your Cargo.toml file!
@@ -14,8 +15,9 @@
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
 //!
-//! // These components are just for demonstration purposes. You should swap them out for your own
-//! // Note that components need to be Clone to use the automatic derive of ComponentGroup
+//! // These components are just for demonstration purposes. You should swap them
+//! // out for your own. Components need to be Clone to use the automatic derive.
+//!
 //! #[derive(Debug, Clone, Component)]
 //! #[storage(VecStorage)]
 //! pub struct Position {x: i32, y: i32}
@@ -28,7 +30,7 @@
 //! #[storage(VecStorage)]
 //! pub struct Health(u32);
 //!
-//! // This is all of the code you need to write to define the group and all of its operations!
+//! // This is all of the code you need to write to define the group and its operations!
 //! #[derive(ComponentGroup)]
 //! struct PlayerComponents {
 //!     position: Position,
@@ -36,13 +38,13 @@
 //!     health: Health,
 //! }
 //!
-//! // Now, you can add all of these components to an entity, load them all from the world with
-//! // one line of code, or even update them all at once!
+//! // Now you can easily add all of these components to an entity, load them all
+//! // from the world, or even update them all at once!
 //! ```
 //!
-//! See the documentation for [`ComponentGroup`] for the exact operations you can perform on the
-//! `PlayerComponents` struct. The rest of the documentation below goes into the motivation behind
-//! this crate and details about how to use it.
+//! See the documentation for [`ComponentGroup`] for the exact operations you can now perform on
+//! the `PlayerComponents` struct. The rest of the documentation below goes into the motivation
+//! behind this crate and details about how to use it.
 //!
 //! # Table of Contents
 //!
