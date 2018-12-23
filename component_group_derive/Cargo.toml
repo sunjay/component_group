@@ -3,6 +3,16 @@ name = "component_group_derive"
 version = "0.1.0"
 authors = ["Sunjay Varma <varma.sunjay@gmail.com>"]
 edition = "2018"
+description = "Automatic derive for the ComponentGroup trait"
+repository = "https://github.com/sunjay/component_group"
+readme = "README.md"
+keywords = ["specs", "component", "group", "ComponentGroup", "gamedev", "ecs"]
+# crates.io/category_slugs
+categories = ["game-engines"]
+license = "MPL-2.0"
+
+[badges]
+travis-ci = { repository = "sunjay/component_group" }
 
 [dependencies]
 syn = "0.15"
