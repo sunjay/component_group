@@ -663,16 +663,19 @@ pub trait ComponentGroup: Sized {
     /// Returns `None` if any of the required fields could not be populated. Fields with an
     /// `Option` type will be set to `None` if their component could not be populated.
     fn first_from_world(world: &World) -> Option<(Entity, Self)>;
+
     /// Extracts this group of components for the given entity from the given world.
     ///
     /// Panics if one of the component fields could not be populated. This can happen if the
     /// component does not exist for this entity. If the field is an `Option` type, its value will
     /// be set to `None` instead of panicking.
     fn from_world(entity: Entity, world: &World) -> Self;
+
     /// Creates a new entity in the world and adds all the components from this group to that entity.
     ///
     /// Any fields with a value of `None` will not be added to the created entity.
     fn create(self, world: &mut World) -> Entity;
+
     /// Update the components of a given entity with all of the components from this group.
     ///
     /// Any fields with a value of `None` will be explicitly removed from the given entity.
