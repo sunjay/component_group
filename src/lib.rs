@@ -689,6 +689,9 @@ pub trait ComponentGroup: Sized {
     ///
     /// Returns the values of each field that were previously present.
     ///
+    /// Note: Any additional components that the entity has other than the ones covered by
+    /// the fields of this group will be left untouched.
+    ///
     /// Panics if one of the component fields could not be populated. This can happen if the
     /// component does not exist for this entity. If the field is an `Option` type, its value will
     /// be set to `None` instead of panicking.
