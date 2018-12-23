@@ -94,12 +94,12 @@ fn first_from_world_method(field_names: &[&Ident], fields: &[ComponentField]) ->
     });
     let tys = fields.into_iter().map(|f| f.ty);
     quote! {
-        fn first_from_world(world: &specs::World) -> Option<Self> {
-            use specs::Join;
-            let ( #(#field_names),* ) = world.system_data::<( #(specs::ReadStorage<#tys>),* )>();
-            ( #(#joinables),* ).join().next().map(|( #(#field_names),* )| Self {
+        fn first_from_world(world: &specs::World) -> Option<(specs::Entity, Self)> {
+            use specs::{Join, Entities};
+            let ( __entities, #(#field_names),* ) = world.system_data::<( Entities, #(specs::ReadStorage<#tys>),* )>();
+            ( &__entities, #(#joinables),* ).join().next().map(|( __entity, #(#field_names),* )| (__entity, Self {
                 #(#field_names : #clones),*
-            })
+            }))
         }
     }
 }

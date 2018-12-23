@@ -201,7 +201,7 @@
 //! // Rust 2018 edition
 //! // Don't forget to add component_group as a dependency to your Cargo.toml file!
 //! use component_group::ComponentGroup;
-//! use specs::{World, Builder, Entity, Component, VecStorage, ReadStorage, WriteStorage, Join};
+//! use specs::{World, Builder, Entity, Entities, Component, VecStorage, ReadStorage, WriteStorage, Join};
 //! use specs::error::Error as SpecsError;
 //! use specs_derive::Component;
 //!
@@ -228,19 +228,21 @@
 //! impl ComponentGroup for PlayerComponents {
 //!     type UpdateError = SpecsError;
 //!
-//!     fn first_from_world(world: &World) -> Option<Self> {
+//!     fn first_from_world(world: &World) -> Option<(Entity, Self)> {
 //!         // Needs to be updated every time the struct changes
-//!         let (positions, velocities, healths) = world.system_data::<(
+//!         let (entities, positions, velocities, healths) = world.system_data::<(
+//!             Entities,
 //!             ReadStorage<Position>,
 //!             ReadStorage<Velocity>,
 //!             ReadStorage<Health>,
 //!         )>();
-//!         (&positions, &velocities, &healths).join().next().map(|(pos, vel, health)| Self {
-//!             // No need to clone because we know and can access all the fields
-//!             position: Position {x: pos.x, y: pos.y},
-//!             velocity: Velocity {x: vel.x, y: vel.y},
-//!             health: Health(health.0),
-//!         })
+//!         (&entities, &positions, &velocities, &healths).join().next()
+//!             .map(|(entity, pos, vel, health)| (entity, Self {
+//!                 // No need to clone because we know and can access all the fields
+//!                 position: Position {x: pos.x, y: pos.y},
+//!                 velocity: Velocity {x: vel.x, y: vel.y},
+//!                 health: Health(health.0),
+//!             }))
 //!     }
 //!
 //!     fn from_world(entity: Entity, world: &World) -> Self {
@@ -293,7 +295,6 @@
 //!     }
 //! }
 //!
-//! # use specs::Entities;
 //! # fn find_player_entity(world: &World) -> Entity {
 //! #     world.system_data::<Entities>().join().next().unwrap() // cheat since only one entity
 //! # }
@@ -330,7 +331,7 @@
 //!     // Player needs to go back to previous level
 //!     // Using first_from_world is safe when you know that there is only one entity with all
 //!     // the components in the group
-//!     let player = PlayerComponents::first_from_world(&level2).unwrap();
+//!     let (_, player) = PlayerComponents::first_from_world(&level2).unwrap();
 //!     let player_entity = find_player_entity(&level1);
 //!     // Move the player back
 //!     player.update(player_entity, &mut level1)?;
@@ -411,7 +412,7 @@
 //!     // Player needs to go back to previous level
 //!     // Using first_from_world is safe when you know that there is only one entity with all
 //!     // the components in the group
-//!     let player = PlayerComponents::first_from_world(&level2).unwrap();
+//!     let (_, player) = PlayerComponents::first_from_world(&level2).unwrap();
 //!     let player_entity = find_player_entity(&level1);
 //!     // Move the player back
 //!     player.update(player_entity, &mut level1)?;
@@ -493,7 +494,7 @@
 //!     // Player needs to go back to previous level
 //!     // The Animation component may have changed/added/removed, but we don't need to worry
 //!     // about that here! The behaviour is the same as above.
-//!     let player = PlayerComponents::first_from_world(&level2).unwrap();
+//!     let (_, player) = PlayerComponents::first_from_world(&level2).unwrap();
 //!     let player_entity = find_player_entity(&level1);
 //!     // If the animation field is not None, we will call Storage::insert and add it to the
 //!     // component's storage. Otherwise, we will call Storage::remove and get rid of it.
@@ -641,7 +642,7 @@ pub trait ComponentGroup: Sized {
     ///
     /// Returns `None` if any of the required fields could not be populated. Fields with an
     /// `Option` type will be set to `None` if their component could not be populated.
-    fn first_from_world(world: &World) -> Option<Self>;
+    fn first_from_world(world: &World) -> Option<(Entity, Self)>;
     /// Extracts this group of components for the given entity from the given world.
     ///
     /// Panics if one of the component fields could not be populated. This can happen if the
