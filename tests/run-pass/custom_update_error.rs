@@ -3,7 +3,7 @@ extern crate specs;
 extern crate specs_derive;
 
 use component_group::ComponentGroup;
-use specs::{World, Builder, Entity, Entities, Component, VecStorage, ReadStorage, WriteStorage, Join};
+use specs::{World, WorldExt, Builder, Entity, Entities, Component, VecStorage, ReadStorage, WriteStorage, Join};
 use specs::error::Error as SpecsError;
 use specs_derive::Component;
 

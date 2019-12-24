@@ -1,6 +1,6 @@
 use component_group::ComponentGroup;
 
-use specs::{World, Entity, Component, VecStorage, HashMapStorage, NullStorage, ReadStorage, WriteStorage};
+use specs::{World, WorldExt, Entity, Component, VecStorage, HashMapStorage, NullStorage, ReadStorage, WriteStorage};
 use specs::error::Error as SpecsError;
 use specs_derive::Component;
 

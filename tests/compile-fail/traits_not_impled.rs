@@ -38,11 +38,9 @@ struct Neither;
 #[derive(ComponentGroup)]
 //~^ ERROR the trait bound `NotImplComponent: specs::Component` is not satisfied [E0277]
 //~| ERROR the trait bound `NotImplComponent: specs::Component` is not satisfied [E0277]
-//~| ERROR the trait bound `NotClone: std::clone::Clone` is not satisfied [E0277]
 //~| ERROR no method named `cloned` found for type `std::option::Option<&NotClone>` in the current scope [E0599]
 //~| ERROR the trait bound `Neither: specs::Component` is not satisfied [E0277]
 //~| ERROR the trait bound `Neither: specs::Component` is not satisfied [E0277]
-//~| ERROR the trait bound `Neither: std::clone::Clone` is not satisfied [E0277]
 //~| ERROR no method named `get` found for type `specs::Storage<'_, NotImplComponent, specs::shred::Fetch<'_, specs::storage::MaskedStorage<NotImplComponent>>>` in the current scope [E0599]
 //~| ERROR no method named `get` found for type `specs::Storage<'_, Neither, specs::shred::Fetch<'_, specs::storage::MaskedStorage<Neither>>>` in the current scope [E0599]
 //~| ERROR no method named `insert` found for type `specs::Storage<'_, NotImplComponent, specs::shred::FetchMut<'_, specs::storage::MaskedStorage<NotImplComponent>>>` in the current scope [E0599]
@@ -55,14 +53,14 @@ struct PlayerComponents2 {
     velocity: Velocity,
     a: NotImplComponent,
     b: NotClone,
+    //~^ ERROR the trait bound `NotClone: std::clone::Clone` is not satisfied [E0277]
     c: Neither,
+    //~^ ERROR the trait bound `Neither: std::clone::Clone` is not satisfied [E0277]
 }
 
 #[derive(ComponentGroup)]
 //~^ ERROR the trait bound `NotImplComponent: specs::Component` is not satisfied [E0277]
-//~| ERROR the trait bound `NotImplComponent: specs::Component` is not satisfied [E0277]
 //~| ERROR no method named `cloned` found for type `std::option::Option<&NotClone>` in the current scope [E0599]
-//~| ERROR the trait bound `Neither: specs::Component` is not satisfied [E0277]
 //~| ERROR the trait bound `Neither: specs::Component` is not satisfied [E0277]
 //~| ERROR no method named `maybe` found for type `specs::Storage<'_, NotImplComponent, specs::shred::Fetch<'_, specs::storage::MaskedStorage<NotImplComponent>>>` in the current scope [E0599]
 //~| ERROR no method named `maybe` found for type `specs::Storage<'_, Neither, specs::shred::Fetch<'_, specs::storage::MaskedStorage<Neither>>>` in the current scope [E0599]
@@ -76,6 +74,10 @@ struct PlayerComponents3 {
     position: Option<Position>,
     velocity: Velocity,
     a: Option<NotImplComponent>,
+    //~^ ERROR the trait bound `NotImplComponent: specs::Component` is not satisfied [E0277]
     b: Option<NotClone>,
     c: Option<Neither>,
+    //~^ ERROR the trait bound `Neither: specs::Component` is not satisfied [E0277]
 }
+
+fn main() {}

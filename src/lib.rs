@@ -71,7 +71,7 @@
 //!
 //! ```rust
 //! // Rust 2018 edition
-//! use specs::{World, Builder, Entity, Component, VecStorage, ReadStorage, WriteStorage, Join};
+//! use specs::{World, WorldExt, Builder, Entity, Component, VecStorage, ReadStorage, WriteStorage, Join};
 //! use specs::error::Error as SpecsError;
 //! use specs_derive::Component;
 //!
@@ -207,7 +207,7 @@
 //! // Rust 2018 edition
 //! // Don't forget to add component_group as a dependency to your Cargo.toml file!
 //! use component_group::ComponentGroup;
-//! use specs::{World, Builder, Entity, Entities, Component, VecStorage, ReadStorage, WriteStorage, Join};
+//! use specs::{World, WorldExt, Builder, Entity, Entities, Component, VecStorage, ReadStorage, WriteStorage, Join};
 //! use specs::error::Error as SpecsError;
 //! use specs_derive::Component;
 //!
@@ -377,7 +377,7 @@
 //! ```rust
 //! // Rust 2018 edition
 //! use component_group::ComponentGroup;
-//! use specs::{World, Component, VecStorage};
+//! use specs::{World, WorldExt, Component, VecStorage};
 //! use specs::error::Error as SpecsError;
 //! use specs_derive::Component;
 //!
@@ -456,7 +456,7 @@
 //!
 //! ```rust
 //! # use component_group::ComponentGroup;
-//! # use specs::{World, Component, VecStorage, HashMapStorage};
+//! # use specs::{World, WorldExt, Component, VecStorage, HashMapStorage};
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
 //! # #[derive(Debug, Clone, Component)]
@@ -558,7 +558,7 @@
 //!
 //! ```rust,no_run
 //! # use component_group::ComponentGroup;
-//! # use specs::{World, Component, VecStorage, ReadStorage};
+//! # use specs::{World, WorldExt, Component, VecStorage, ReadStorage};
 //! # use specs::error::Error as SpecsError;
 //! # use specs_derive::Component;
 //! #

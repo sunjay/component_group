@@ -141,7 +141,7 @@ fn create_method(fields: &[ComponentField]) -> TokenStream {
     });
     quote! {
         fn create(self, world: &mut specs::World) -> specs::Entity {
-            use specs::Builder;
+            use specs::{Builder, WorldExt};
             #[allow(unused_mut)]
             let mut builder = world.create_entity();
             #( #with_comp )*

@@ -45,3 +45,5 @@ struct PlayerComponents4; //~ ERROR Only structs with named fields are supported
 struct PlayerComponents5 { //~ ERROR struct must have at least one field to derive ComponentGroup
     // empty
 }
+
+fn main() {}

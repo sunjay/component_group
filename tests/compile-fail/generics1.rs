@@ -17,10 +17,8 @@ trait Foo {}
 #[derive(ComponentGroup)]
 //~^ ERROR the trait bound `T: specs::Component` is not satisfied [E0277]
 //~| ERROR the trait bound `T: specs::Component` is not satisfied [E0277]
-//~| ERROR the trait bound `T: std::clone::Clone` is not satisfied [E0277]
 //~| ERROR the trait bound `U: specs::Component` is not satisfied [E0277]
 //~| ERROR the trait bound `U: specs::Component` is not satisfied [E0277]
-//~| ERROR the trait bound `U: std::clone::Clone` is not satisfied [E0277]
 //~| ERROR `T` cannot be sent between threads safely [E0277]
 //~| ERROR `T` cannot be shared between threads safely [E0277]
 //~| ERROR `U` cannot be sent between threads safely [E0277]
@@ -35,5 +33,9 @@ trait Foo {}
 struct MissingBounds<T: Foo, U> { // Missing Component + Clone bounds
     position: Position,
     foo: T,
+    //~^ ERROR the trait bound `T: std::clone::Clone` is not satisfied [E0277]
     bar: U,
+    //~^ ERROR the trait bound `U: std::clone::Clone` is not satisfied [E0277]
 }
+
+fn main() {}

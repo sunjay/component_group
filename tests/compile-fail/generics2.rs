@@ -52,3 +52,5 @@ fn foo4(c: PlayerComponents<Position, NotClone>) {} // No error
 fn foo5(c: PlayerComponents<NotClone, Velocity>) {} // No error
 //~^ ERROR the trait bound `NotClone: std::clone::Clone` is not satisfied [E0277]
 //~| ERROR the trait bound `NotClone: Foo` is not satisfied [E0277]
+
+fn main() {}
