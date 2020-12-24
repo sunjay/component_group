@@ -1,6 +1,6 @@
 [package]
 name = "component_group_derive"
-version = "2.0.0"
+version = "3.0.0"
 authors = ["Sunjay Varma <varma.sunjay@gmail.com>"]
 edition = "2018"
 description = "Automatic derive for the ComponentGroup trait"
