@@ -16,7 +16,7 @@ fn inner_option_type(path: &Path) -> Option<&Type> {
         // This is a naive test
         Path {leading_colon: None, segments} if segments.len() == 1 => {
             // Safe unwrap because we already checked the length
-            let last = segments.last().unwrap().into_value();
+            let last = segments.last().unwrap();
             match last {
                 PathSegment {
                     ident: type_name,
@@ -26,7 +26,7 @@ fn inner_option_type(path: &Path) -> Option<&Type> {
                         ..
                     }),
                 } if type_name == "Option" && args.len() == 1 => {
-                    match args.last().unwrap().into_value() {
+                    match args.last().unwrap() {
                         GenericArgument::Type(ty) => Some(ty),
                         _ => None,
                     }
